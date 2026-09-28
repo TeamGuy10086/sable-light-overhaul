@@ -3,7 +3,7 @@ $g = 'D:\DSH\McMOD\work\glslang\bin\glslang.exe'
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 $original = 'D:\DSH\McMOD\work\photon-inspection\photon-voxy-support\shaders\include\lighting\diffuse_lighting.glsl'
-$patched = 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\photon\shaders\include\lighting\diffuse_lighting.glsl'
+$patched = 'D:\DSH\McMOD\work\sable-light-overhaul\patch\photon\shaders\include\lighting\diffuse_lighting.glsl'
 
 $origLines = [System.IO.File]::ReadAllLines($original, $utf8NoBom)
 $newLines = [System.IO.File]::ReadAllLines($patched, $utf8NoBom)

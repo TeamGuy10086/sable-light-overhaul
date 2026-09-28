@@ -10,7 +10,7 @@ $versionDir = Get-ChildItem -LiteralPath $versionsRoot -Directory -ErrorAction S
 if (-not $versionDir) { throw 'could not locate a modpack config to migrate' }
 $live = Join-Path $versionDir.FullName 'config\cbcmuzzlelight-client.toml'
 Write-Output "live config = $live"
-$deliver = 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\cbcmuzzlelight-client.toml'
+$deliver = 'D:\DSH\McMOD\work\sable-light-overhaul\patch\cbcmuzzlelight-client.toml'
 
 $lines = [System.IO.File]::ReadAllLines($live, $utf8NoBom)
 Write-Output ("source lines = {0}" -f $lines.Count)

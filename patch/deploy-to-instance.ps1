@@ -13,7 +13,7 @@
     reviewable fact.
 
     It manages exactly two things:
-      1) mods\cbc-muzzle-light-<version>.jar
+      1) mods\<archive name>-<version>.jar
          Byte-compared against the freshly built jar of the same name in build\libs. Any *other*
          version of our jar sitting in mods\ is deleted, because two jars with the same mod id
          stop the game from starting.
@@ -38,10 +38,10 @@
     regenerated (idempotent) so that a stale artifact cannot hide.
 
 .EXAMPLE
-    & 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\deploy-to-instance.ps1' -Check
+    & 'D:\DSH\McMOD\work\sable-light-overhaul\patch\deploy-to-instance.ps1' -Check
 
 .EXAMPLE
-    & 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\deploy-to-instance.ps1' -Instance 'G:\HelloMC\.minecraft\versions\<version folder>'
+    & 'D:\DSH\McMOD\work\sable-light-overhaul\patch\deploy-to-instance.ps1' -Instance 'G:\HelloMC\.minecraft\versions\<version folder>'
 
 .NOTES
     Keep this file pure ASCII. It runs under Windows PowerShell 5.1 with the ANSI code page set to
@@ -117,8 +117,13 @@ Write-Host ""
 $ver = (Select-String -LiteralPath (Join-Path $repo 'build.gradle') `
         -Pattern "^version\s*=\s*'([^']+)'" | Select-Object -First 1).Matches[0].Groups[1].Value
 if (-not $ver) { throw 'cannot read version from build.gradle' }
+# The jar's own name comes out of build.gradle too, so that renaming the project cannot silently leave
+# this script looking for a file that no longer exists. Both are single sources of truth there.
+$archive = (Select-String -LiteralPath (Join-Path $repo 'build.gradle') `
+        -Pattern "archivesName\s*=\s*'([^']+)'" | Select-Object -First 1).Matches[0].Groups[1].Value
+if (-not $archive) { throw 'cannot read archivesName from build.gradle' }
 
-$jarName   = "cbc-muzzle-light-$ver.jar"
+$jarName   = "$archive-$ver.jar"
 $built     = Join-Path $repo     "build\libs\$jarName"
 $installed = Join-Path $Instance "mods\$jarName"
 
@@ -152,8 +157,19 @@ else {
 }
 
 # Two jars with the same mod id stop the game from starting.
-$stale = @(Get-ChildItem -LiteralPath (Join-Path $Instance 'mods') -File -Filter 'cbc-muzzle-light-*.jar' |
-           Where-Object { $_.Name -ne $jarName })
+#
+# Every archive name this mod has ever shipped under has to be swept, not just the current one: after a
+# rename the previous jar is still sitting in mods\ under the old name, and `archivesName` alone would
+# never match it. The mod id did not change, so the game sees two copies of the same mod and refuses to
+# start. Add the new name here if it is ever renamed again.
+$archiveNames = @($archive, 'cbc-muzzle-light')
+$stale = @(Get-ChildItem -LiteralPath (Join-Path $Instance 'mods') -File -Filter '*.jar' |
+           Where-Object {
+               $name = $_.Name
+               if ($name -eq $jarName) { return $false }
+               foreach ($a in $archiveNames) { if ($name -like "$a-*.jar") { return $true } }
+               return $false
+           })
 foreach ($s in $stale) {
     if ($Check) {
         Add-Row "mods\$($s.Name)" 'STALE' 'older version with the same mod id - must be removed'

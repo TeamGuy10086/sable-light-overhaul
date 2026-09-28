@@ -262,7 +262,7 @@ AP 弹命中/跳弹火花、炮口烟、扬尘、火炮后坐、爆炸闪光、�
 
 | 项 | 值 |
 | --- | --- |
-| 仓库 | `D:\DSH\McMOD\work\cbc-muzzle-light`。**已纳入 git**（远端是私有的 GitHub 仓库，见 §11） |
+| 仓库 | `D:\DSH\McMOD\work\sable-light-overhaul`。**已纳入 git**（远端是私有的 GitHub 仓库，见 §11） |
 | 用户实例（D:，**主用**，SSD） | `D:\DSH\HelloMC\.minecraft\versions\你好,新蒸程v1.7.1\` |
 | 用户实例（G:，旧） | `G:\HelloMC\.minecraft\versions\你好,新蒸程v1.7.1\`（仍在，内容需与 D: 同步） |
 | 编译用依赖 jar | `libs/`（`cbc.jar` 5.11.7、`sable.jar`、`sable-companion.jar`、`iris.jar`、`ldlib2.jar`+`taffy.jar`+`yoga.jar`、`yuushya.jar`、`cbcat.jar`、`copycats.jar` …），由 `prepare-libs.ps1` 解 jar-in-jar |
@@ -272,8 +272,8 @@ AP 弹命中/跳弹火花、炮口烟、扬尘、火炮后坐、爆炸闪光、�
 ## 2. 构建、测试、交付
 
 ```powershell
-cd D:\DSH\McMOD\work\cbc-muzzle-light
-.\gradlew.bat build        # 产出 build/libs/cbc-muzzle-light-<version>-alpha.jar（约 3 分钟）
+cd D:\DSH\McMOD\work\sable-light-overhaul
+.\gradlew.bat build        # 产出 build/libs/sable-light-overhaul-<version>.jar（约 3 分钟）
 .\gradlew.bat test         # src/test 下 20 个 JUnit5 测试文件
 ```
 
@@ -281,7 +281,7 @@ cd D:\DSH\McMOD\work\cbc-muzzle-light
   `version="${version}"`，由 `build.gradle` 的 `processResources` 展开（0.9.50 起）。
   *历史坑：mods.toml 曾是硬编码 `0.9.5-alpha`，导致游戏 mod 列表永远显示 0.9.5，无法判断装的是哪个 jar。*
 - **交付 = 跑部署脚本，不要手工拷文件**：
-  `& 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\deploy-to-instance.ps1' -Instance '<版本目录>'`。
+  `& 'D:\DSH\McMOD\work\sable-light-overhaul\patch\deploy-to-instance.ps1' -Instance '<版本目录>'`。
   它把 jar 与光影补丁都对齐到仓库产物，并删掉同 mod id 的旧 jar。
   **每次产出新 jar / 新补丁后，对每个实例各跑一遍**（现在有 D: 与 G: 两份）。
   只想确认状态就加 `-Check`：退出码 `0` = 全部一致，`1` = 有问题（并列出）。
@@ -292,7 +292,7 @@ cd D:\DSH\McMOD\work\cbc-muzzle-light
 - **改完 GLSL 必须让 Iris 重新加载光影包**（在光影列表里重选该包，或重启游戏）；**F3+R 不会重载 shader**。
 - **配置默认值不会覆盖用户已有键**（NeoForge 行为）：改 `defineInRange` 的默认值对老用户无效。
   要么让用户手改，要么重新生成 TOML（必须保留用户已调的值），改完明确告诉用户要改哪几项。
-- 编辑事故的恢复路径：`build/libs/cbc-muzzle-light-<version>-alpha-sources.jar` 里有完整源码。
+- 编辑事故的恢复路径：`build/libs/sable-light-overhaul-<version>-sources.jar` 里有完整源码。
 
 ## 3. 档位（tiers）
 
@@ -869,7 +869,7 @@ requestService = new RequestProcessingService(server);
 
 - PowerShell 里多行 here-string `.Replace()` 常因 CRLF 失败 → 用**行数组手术**，或直接整文件 `write`。
 - **按内容删行极其危险**（曾两次删掉共享声明行）→ 优先整文件重写。
-- 编辑坏了的恢复来源：`build/libs/cbc-muzzle-light-<version>-alpha-sources.jar`。
+- 编辑坏了的恢复来源：`build/libs/sable-light-overhaul-<version>-sources.jar`。
 - **PowerShell 函数里不要把参数命名成 `$args`** —— 那是函数的自动变量，`@args` splat 出去会是**空的**，
   于是你精心构造的参数**一个都没传下去**，而命令看起来"成功"，你得出一条完全错误的结论。
   （排查代理时就这么被骗了两轮。）同理：验证外部命令行为时要**打印它实际用到的目的地/参数**，别只看退出码。
@@ -883,7 +883,7 @@ requestService = new RequestProcessingService(server);
 
 ## 11. 版本控制（2026-09-29 起）
 
-**本地**：`D:\DSH\McMOD\work\cbc-muzzle-light`，分支 `main`。
+**本地**：`D:\DSH\McMOD\work\sable-light-overhaul`，分支 `main`。
 **远端**：`https://github.com/TeamGuy10086/SableLightOverhaul`（**私有**）。
 
 > 在这之前仓库**没有版本控制，改动不可回滚** —— 这是挂了很久的长期风险，现已消除。
@@ -924,9 +924,29 @@ build/  .gradle/  run/  logs/  libs/*.jar  libs/**/*.jar  .idea/  *.iml
   `credential.helper = manager-core`，首次推送**浏览器授权一次**即可。
   凭据类的东西**绝不入库、绝不写进任何配置**。
 
+**命名**（2026-09-29 定）—— 只改了"外壳"这一层：
+| | 旧 | 新 |
+|---|---|---|
+| 目录 / `rootProject.name` / `archivesName` | `cbc-muzzle-light` | `sable-light-overhaul` |
+| mod 显示名 | `CBC Muzzle Light (Experimental)` | `Sable Light Overhaul (Experimental)` |
+| **`modId` / Java 包 / 资源命名空间 / 配置文件 / SavedData 键** | `cbcmuzzlelight` 等 | **未改，故意** |
+
+**为什么 `modId` 和包名没动**：改它们会让**现有存档里的方块和物品全部失效**，并丢掉用户调过的配置与已登记光源。
+测试期（0.1.x）恰恰是最需要"改完就能进去看"的阶段，所以留到用户**决定设基线并 release** 时一次做完，
+那时顺手写配置与 SavedData 的迁移。**在那之前不要动 `modId`。**
+（`group = 'dev.cbcmuzzlelight'` 同理留着 —— 它跟包名绑在一起，跟包名一起改。）
+
+**版本策略**：`0.1.0` 起，测试期只递增**第三位**（`0.1.1`、`0.1.13`、`0.1.91` …），
+**在用户明确说"设基线并 release"之前不许升到 `0.2`**。之前用的 `0.11.0-alpha` 那套已废弃。
+
 **约定**
-- 版本号唯一真源 = `build.gradle` 的 `version`；每个版本打一个附注 tag（现状 `v0.11.0-alpha`）。
+- 版本号唯一真源 = `build.gradle` 的 `version`；jar 档名唯一真源 = `build.gradle` 的 `base.archivesName`
+  （`deploy-to-instance.ps1` 这两个都从 `build.gradle` 读，不再硬编码，所以再改名不会漏）。
+- 每个版本打一个附注 tag（现状 `v0.1.0`）。
 - 首个提交的作者/SMTP 已设为本机身份（`TeamGuy10086 <ylyl051234@qq.com>`）；
   **密码类凭据绝不入库、绝不写进任何配置**。
 - `patch/photon/.../diffuse_lighting.glsl` 是**生成物但入库** —— 它是交付物（README 让用户直接拷这个文件），
   且 `apply-photon-patch.ps1` 幂等，所以入库让补丁在没有 Photon 原文件时也可复现。
+- **`RELEASE-*` / `COLORS-*` / `GENERATORS-*` / `GPU-VERIFY` / `SABLE-BRIDGE` / `SPOTLIGHT-*` / `README.zh-CN.md`
+  里的旧档名与旧路径一律不改** —— 它们记录的是当年的文件名，改了就是篡改历史。
+  代价是仓库里没有正经的首页 README（GitHub 不会把 `README.zh-CN.md` 当首页渲染），这条记在待办里。

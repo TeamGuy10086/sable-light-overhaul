@@ -9,17 +9,17 @@
 
 ```powershell
 # 只看不改（交接、换实例、怀疑漏装时先跑这个）
-& 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\deploy-to-instance.ps1' -Check
+& 'D:\DSH\McMOD\work\sable-light-overhaul\patch\deploy-to-instance.ps1' -Check
 
 # 真正部署；省略 -Instance 时会在已知实例根目录下自动找唯一候选
-& 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\deploy-to-instance.ps1' -Instance '<版本目录>'
+& 'D:\DSH\McMOD\work\sable-light-overhaul\patch\deploy-to-instance.ps1' -Instance '<版本目录>'
 ```
 
 它管两件事，也只管这两件：
 
 | 项 | 动作 |
 | --- | --- |
-| `mods\cbc-muzzle-light-<版本>.jar` | 与 `build\libs` 里刚编出来的同名 jar **逐字节比对**；顺带删掉 `mods` 里**其它版本**的同名 jar（同 mod id 两份会让游戏起不来） |
+| `mods\sable-light-overhaul-<版本>.jar` | 与 `build\libs` 里刚编出来的同名 jar **逐字节比对**；顺带删掉 `mods` 里**其它版本**的同名 jar（同 mod id 两份会让游戏起不来），**并连旧档名 `cbc-muzzle-light-*.jar` 一起清理**（改名后旧 jar 留在 mods 里同样会让游戏起不来） |
 | `shaderpacks\<包>\shaders\include\lighting\diffuse_lighting.glsl` | **先重新生成**补丁产物（幂等），再与实例里那份比对、必要时覆盖 |
 
 实例里的 `config\*.toml` **绝不会被改写**（那是用户调过的值，新键由模组自己补），脚本只报告存在性与

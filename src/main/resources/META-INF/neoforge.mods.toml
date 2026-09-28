@@ -4,7 +4,7 @@ license="MIT"
 [[mods]]
 modId="cbcmuzzlelight"
 version="${version}"
-displayName="CBC Muzzle Light (Experimental)"
+displayName="Sable Light Overhaul (Experimental)"
 description='''Native big-cannon plume lighting and directional autocannon muzzle flame for CBC 5.11.7. Mortars excluded. No shader-pack edits required for the base effect; runtime validation pending.'''
 [[mixins]]
 config="cbcmuzzlelight.mixins.json"

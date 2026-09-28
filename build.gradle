@@ -3,8 +3,8 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 group = 'dev.cbcmuzzlelight'
-version = '0.11.0-alpha'
-base { archivesName = 'cbc-muzzle-light' }
+version = '0.1.0'
+base { archivesName = 'sable-light-overhaul' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
 neoForge {
     version = '21.1.228'

@@ -2,8 +2,8 @@ $ErrorActionPreference = 'Stop'
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 $src = 'D:\DSH\McMOD\work\photon-inspection\photon-voxy-support\shaders\include\lighting\diffuse_lighting.glsl'
-$fragment = 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\source\cbc_muzzle_light.glsl'
-$outDir = 'D:\DSH\McMOD\work\cbc-muzzle-light\patch\photon\shaders\include\lighting'
+$fragment = 'D:\DSH\McMOD\work\sable-light-overhaul\patch\source\cbc_muzzle_light.glsl'
+$outDir = 'D:\DSH\McMOD\work\sable-light-overhaul\patch\photon\shaders\include\lighting'
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 $text = [System.IO.File]::ReadAllText($src, $utf8NoBom)
