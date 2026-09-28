@@ -890,6 +890,22 @@ requestService = new RequestProcessingService(server);
   （这台机器上最可能是 Windows Search 索引器 `SearchIndexer`，也可能是有 Explorer 窗口开在那个路径）。
   绕法：`robocopy <旧> <新> /E /MOVE /COPY:DAT /DCOPY:DAT /R:2 /W:1`（**退出码 1 是成功**，含义是"有文件被复制"）。
   移完**必须核对文件数**（本次 2201 → 2201）并 `git -C <新路径> status` —— `.git` 是跟着一起搬的。
+- **⚠ 别在游戏运行时拷游戏目录**：`saves\<世界>\voxy\` 是 **RocksDB**，文件级拷贝必然拷出**半截数据库**。
+  2026-09-29 把实例从 G: 拷到 D: 就踩了这个 —— D 的 `新的世界 (3)\voxy\<uuid>\storage\` 里
+  `CURRENT` 指向 `MANIFEST-000369`，而该文件**根本没被拷到**（整个目录 `MANIFEST*` 一个都没有），
+  于是 Voxy 在 `LevelRenderer.allChanged()` 里抛
+  `RocksDBException: Failed to open NewSequentialFile ... 系统找不到指定的文件`，
+  **在 `handleLogin` 里把 `setLevel` 打断 → 玩家从未被创建**。
+- **排查教训（重要）**：上一条的崩溃报告**第一条异常不是根因**。真实链条是
+  `RocksDBException` → `handleLogin` 中断 → `PlayerAbilities` 的 `player == null` NPE
+  → 连接中断 → 344 条 `Cannot retrieve the client player during the configuration phase`
+  → 最后才是报告首行的 `MultiPlayerGameMode.ensureHasSentCarriedItem` NPE。
+  **看崩溃报告要先读 `Caused by` 链，并注意它在 `handleLogin`/`setLevel` 里的位置**，别停在第一条。
+  （同理：**对比日志前先确认两条日志来自同一个实例**。这次"只有我们的 jar 不同"的结论就是
+  拿 G: 的日志和 D: 的日志比出来的 —— 用 `G:\HelloMC` / `D:\DSH\HelloMC` 的出现次数一验就露馅。）
+- **修法**：把那个 `voxy` 目录改名或删掉即可 —— Voxy 会从世界本体重建 LOD 缓存，
+  世界本体（`level.dat`/`region/`/`entities/`/`playerdata/`）完全不受影响。
+  **预防**：关掉游戏再拷；或者拷完直接把 `voxy` 删掉让它重建。
 - 单位/物理护栏：`velocity` 是**每物理步** Δv（≤5.0），`physicsSteps` 是倍数；
   永远不要把位置当冲量传（`applyImpulseAtPoint` 的参数顺序曾经搞反，Δv=1e-15 就把载具打飞了）；
   施加前后都要打日志。
