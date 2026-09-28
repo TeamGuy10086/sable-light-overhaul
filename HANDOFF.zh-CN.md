@@ -901,6 +901,8 @@ build/  .gradle/  run/  logs/  libs/*.jar  libs/**/*.jar  .idea/  *.iml
 - `libs/**/*.jar` 是补的：单级 `libs/*.jar` **不匹配子目录**，`prepare-libs.ps1` 从 `lamb-runtime.jar`
   抽出来的 13 个 jar 本来会被提交进去（3.6 MB 第三方二进制）。
 - 后果：**克隆下来不能直接构建**。必须先在**有游戏实例**的机器上跑 `prepare-libs.ps1` 从 `mods/` 抽 jar。
+  而且 `prepare-libs.ps1` 要**手动传 8 个 jar 路径**并逐个比对 SHA-256，等于**把构建钉死在那台有特定整合包的机器上**。
+  **待办：让它像 `deploy-to-instance.ps1` 那样自动探测实例**（现在是硬伤，README 里照实写了）。
   也就是**游戏实例是构建的必要依赖**：实例没了，仓库也编不了。缓解：把 `libs/`（34 MB）另行归档到别的盘。
 
 **行尾**（`.gitattributes`）：`* -text`，**禁止任何 EOL 转换**。本仓库**故意**混着 LF 和 CRLF
@@ -954,4 +956,4 @@ build/  .gradle/  run/  logs/  libs/*.jar  libs/**/*.jar  .idea/  *.iml
   且 `apply-photon-patch.ps1` 幂等，所以入库让补丁在没有 Photon 原文件时也可复现。
 - **`RELEASE-*` / `COLORS-*` / `GENERATORS-*` / `GPU-VERIFY` / `SABLE-BRIDGE` / `SPOTLIGHT-*` / `README.zh-CN.md`
   里的旧档名与旧路径一律不改** —— 它们记录的是当年的文件名，改了就是篡改历史。
-  代价是仓库里没有正经的首页 README（GitHub 不会把 `README.zh-CN.md` 当首页渲染），这条记在待办里。
+  首页由新的 `README.md` 承担（GitHub 不会把 `README.zh-CN.md` 当首页渲染）。
