@@ -870,6 +870,11 @@ requestService = new RequestProcessingService(server);
 - PowerShell 里多行 here-string `.Replace()` 常因 CRLF 失败 → 用**行数组手术**，或直接整文件 `write`。
 - **按内容删行极其危险**（曾两次删掉共享声明行）→ 优先整文件重写。
 - 编辑坏了的恢复来源：`build/libs/cbc-muzzle-light-<version>-alpha-sources.jar`。
+- **PowerShell 函数里不要把参数命名成 `$args`** —— 那是函数的自动变量，`@args` splat 出去会是**空的**，
+  于是你精心构造的参数**一个都没传下去**，而命令看起来"成功"，你得出一条完全错误的结论。
+  （排查代理时就这么被骗了两轮。）同理：验证外部命令行为时要**打印它实际用到的目的地/参数**，别只看退出码。
+- **git 的 `http.<url>.proxy` 优先级高于 `http.proxy`** —— 想临时清掉代理，要覆盖 `http.<url>.proxy` 本身
+  （`-c http.https://github.com.proxy=`），覆盖 `http.proxy` 是没用的。
 - 单位/物理护栏：`velocity` 是**每物理步** Δv（≤5.0），`physicsSteps` 是倍数；
   永远不要把位置当冲量传（`applyImpulseAtPoint` 的参数顺序曾经搞反，Δv=1e-15 就把载具打飞了）；
   施加前后都要打日志。
@@ -898,15 +903,26 @@ build/  .gradle/  run/  logs/  libs/*.jar  libs/**/*.jar  .idea/  *.iml
 `true`，**每个 LF 文件都会在检出时被改成 CRLF，整棵树看起来全被改过**，真实改动会被埋掉。
 仓库级 `core.autocrlf=false` 也已设（不动全局）。
 
-**⚠ git 必须显式走代理，而浏览器不用**（这台机器的实际情况）
-- 跑着 `v2rayN` + `v2ray`，本地 HTTP 代理 `127.0.0.1:19788`。
-- **`ProxyEnable`（WinINET 系统代理）是关的，而 git 从来不用 WinINET** —— 所以"浏览器能上 GitHub"
-  和"git 能推"是两回事。实测：**直连 `github.com:443` 21 秒超时失败，走 19788 五秒成功**。
-- 已配**只对 github.com 生效**的全局项：
+**⚠ 网络：git 走代理，浏览器不一定**（这台机器的实测，2026-09-29）
+- 跑着 `v2rayN` + `v2ray`，本地 **HTTP** 代理 `127.0.0.1:19788`。
+- **两件事是分开的，别混**：`v2ray` **核心在跑**（→ 19788 在听）才是 git 需要的；
+  v2rayN 里的**"系统代理"开关**（→ WinINET `ProxyEnable`）只影响浏览器那类程序，**git 用不到**。
+  用户把系统代理关了，git 照样能推 —— 因为 git 是**显式指向 19788** 的。
+- **已配**（只对 github.com 生效，其它 remote 不受影响）：
   `git config --global http.https://github.com.proxy http://127.0.0.1:19788`
-  其它 remote 不受影响；撤销用 `--unset`。**前提是 v2rayN 核心在跑**；端口若改过，这条要跟着改。
-- 凭据：系统级 `credential.helper = manager-core`，首次推送**浏览器授权一次**即可。
-  **永远不要用账号密码**（GitHub 自 2021-08 起不接受密码做 git 认证）。
+  撤销 `--unset`；**端口若在 v2rayN 里改过，这条要跟着改**。
+- **实测的三组对照**（`GIT_CURL_VERBOSE` 验了实际目的地，不是猜的）：
+
+  | | 目的地 | 结果 |
+  |---|---|---|
+  | 清空代理真直连 | `20.205.243.166:443` | ✅ 4.6s —— 但**同一天早些时候直连超时过两次，各 21 秒** |
+  | 死端口 19799 | `127.0.0.1:19799` | ❌ 2.2s（快速失败，好判断） |
+  | 真实代理 19788 | `127.0.0.1:19788` | ✅ 3.5s，**稳定** |
+
+  → **直连"时通时不通"，走代理稳定。** 忘了开 v2ray 不会卡 21 秒，会**立刻**报连接被拒。
+- **不用账号密码**：GitHub 自 2021-08 起不接受密码做 git 认证。系统级
+  `credential.helper = manager-core`，首次推送**浏览器授权一次**即可。
+  凭据类的东西**绝不入库、绝不写进任何配置**。
 
 **约定**
 - 版本号唯一真源 = `build.gradle` 的 `version`；每个版本打一个附注 tag（现状 `v0.11.0-alpha`）。
