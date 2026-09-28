@@ -262,7 +262,7 @@ AP 弹命中/跳弹火花、炮口烟、扬尘、火炮后坐、爆炸闪光、�
 
 | 项 | 值 |
 | --- | --- |
-| 仓库 | `D:\DSH\McMOD\work\cbc-muzzle-light`（**不是 git 仓库**，无版本控制，改动不可回滚） |
+| 仓库 | `D:\DSH\McMOD\work\cbc-muzzle-light`。**已纳入 git**（远端是私有的 GitHub 仓库，见 §11） |
 | 用户实例（D:，**主用**，SSD） | `D:\DSH\HelloMC\.minecraft\versions\你好,新蒸程v1.7.1\` |
 | 用户实例（G:，旧） | `G:\HelloMC\.minecraft\versions\你好,新蒸程v1.7.1\`（仍在，内容需与 D: 同步） |
 | 编译用依赖 jar | `libs/`（`cbc.jar` 5.11.7、`sable.jar`、`sable-companion.jar`、`iris.jar`、`ldlib2.jar`+`taffy.jar`+`yoga.jar`、`yuushya.jar`、`cbcat.jar`、`copycats.jar` …），由 `prepare-libs.ps1` 解 jar-in-jar |
@@ -875,3 +875,42 @@ requestService = new RequestProcessingService(server);
   施加前后都要打日志。
 - 用户偏好：扬尘不要垂直偏移（位置由代码决定），排气烟才有 `offsetY`；船体标记只对 Sable 有效、无碰撞、每簇一个；
   光源管理器替换任何会发光的方块（带 BE 的方块拒绝）；GPU 路径不必保守（真正的开销旋钮是阴影灯数量）。
+
+## 11. 版本控制（2026-09-29 起）
+
+**本地**：`D:\DSH\McMOD\work\cbc-muzzle-light`，分支 `main`。
+**远端**：`https://github.com/TeamGuy10086/SableLightOverhaul`（**私有**）。
+
+> 在这之前仓库**没有版本控制，改动不可回滚** —— 这是挂了很久的长期风险，现已消除。
+> **改动验证通过后要提交并推送**；未实测的在提交信息里写明"未实测"。
+
+**忽略规则**（`.gitignore`）—— 它决定"克隆下来能不能直接编译"：
+```
+build/  .gradle/  run/  logs/  libs/*.jar  libs/**/*.jar  .idea/  *.iml
+```
+- `libs/**/*.jar` 是补的：单级 `libs/*.jar` **不匹配子目录**，`prepare-libs.ps1` 从 `lamb-runtime.jar`
+  抽出来的 13 个 jar 本来会被提交进去（3.6 MB 第三方二进制）。
+- 后果：**克隆下来不能直接构建**。必须先在**有游戏实例**的机器上跑 `prepare-libs.ps1` 从 `mods/` 抽 jar。
+  也就是**游戏实例是构建的必要依赖**：实例没了，仓库也编不了。缓解：把 `libs/`（34 MB）另行归档到别的盘。
+
+**行尾**（`.gitattributes`）：`* -text`，**禁止任何 EOL 转换**。本仓库**故意**混着 LF 和 CRLF
+（`.ps1` 和部分老 Java 是 CRLF；`HANDOFF`、`patch/*.md`、新 Java 是 LF）。若 `core.autocrlf` 哪天变成
+`true`，**每个 LF 文件都会在检出时被改成 CRLF，整棵树看起来全被改过**，真实改动会被埋掉。
+仓库级 `core.autocrlf=false` 也已设（不动全局）。
+
+**⚠ git 必须显式走代理，而浏览器不用**（这台机器的实际情况）
+- 跑着 `v2rayN` + `v2ray`，本地 HTTP 代理 `127.0.0.1:19788`。
+- **`ProxyEnable`（WinINET 系统代理）是关的，而 git 从来不用 WinINET** —— 所以"浏览器能上 GitHub"
+  和"git 能推"是两回事。实测：**直连 `github.com:443` 21 秒超时失败，走 19788 五秒成功**。
+- 已配**只对 github.com 生效**的全局项：
+  `git config --global http.https://github.com.proxy http://127.0.0.1:19788`
+  其它 remote 不受影响；撤销用 `--unset`。**前提是 v2rayN 核心在跑**；端口若改过，这条要跟着改。
+- 凭据：系统级 `credential.helper = manager-core`，首次推送**浏览器授权一次**即可。
+  **永远不要用账号密码**（GitHub 自 2021-08 起不接受密码做 git 认证）。
+
+**约定**
+- 版本号唯一真源 = `build.gradle` 的 `version`；每个版本打一个附注 tag（现状 `v0.11.0-alpha`）。
+- 首个提交的作者/SMTP 已设为本机身份（`TeamGuy10086 <ylyl051234@qq.com>`）；
+  **密码类凭据绝不入库、绝不写进任何配置**。
+- `patch/photon/.../diffuse_lighting.glsl` 是**生成物但入库** —— 它是交付物（README 让用户直接拷这个文件），
+  且 `apply-photon-patch.ps1` 幂等，所以入库让补丁在没有 Photon 原文件时也可复现。
