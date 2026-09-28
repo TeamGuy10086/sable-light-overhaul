@@ -1,0 +1,352 @@
+#Allowed Values: Advanced, Legacy, GPU, None
+lightingMode = "Advanced"
+
+[advanced]
+	#Additional receiving ship/area pairs for tracer, spotlight and registered sources. Muzzle budget remains separate.
+	# Default: 4096
+	# Range: 1 ~ 65536
+	additionalReceiverBudget = 4096
+
+	[advanced.performance]
+		# Default: 32
+		# Range: 1 ~ 64
+		maxAreaLights = 32
+		# Default: 64
+		# Range: 1 ~ 128
+		maxReceiverAreas = 128
+		debugLogging = true
+
+		[advanced.autocannon.shape]
+			#Forward distance from the light source to zero brightness, at reference size.
+			# Default: 32.0
+			# Range: 0.1 ~ 96.0
+			forwardRange = 16.0
+			# Default: 16.0
+			# Range: 0.1 ~ 96.0
+			rearRange = 8.0
+			#Sideways radius; shape is widest at the source.
+			# Default: 16.0
+			# Range: 0.1 ~ 96.0
+			sideRange = 10.0
+			#Radius perpendicular to the gun axis and side axis; world-up reference, not ship roll.
+			# Default: 16.0
+			# Range: 0.1 ~ 96.0
+			verticalRange = 12.0
+			#Rear clipping distance; approximates muzzle masking, not real occlusion. Set >= rearRange to disable.
+			# Default: 12.0
+			# Range: 0.0 ~ 96.0
+			rearClipDistance = 6.0
+
+		[advanced.autocannon.spatial]
+			# Default: 0.25
+			# Range: 0.0 ~ 0.9
+			coreFraction = 0.25
+			#Middle segment fraction of the distance remaining after the core.
+			# Default: 0.55
+			# Range: 0.05 ~ 0.95
+			middleFraction = 0.55
+			#Tail starting brightness; capped so outer falloff is slower than middle.
+			# Default: 0.2
+			# Range: 0.0 ~ 0.9
+			tailBrightness = 0.2
+
+		[advanced.autocannon.time]
+			#Stage lifetime in ticks. Smoke time starts after blast stage; each stage has its own clock.
+			# Default: 5
+			# Range: 1 ~ 600
+			durationTicks = 5
+			# Default: 1
+			# Range: 0 ~ 600
+			peakHoldTicks = 1
+			# Default: 0.0
+			# Range: 0.0 ~ 1.0
+			minimumBrightness = 0.0
+			#Fraction of initial brightness lost per tick after hold.
+			# Default: 0.5
+			# Range: 0.0 ~ 1.0
+			decayPerTick = 0.5
+
+		[advanced.autocannon.scaling]
+			#Unused for autocannon (fixed size).
+			# Default: 1.0
+			# Range: 0.1 ~ 64.0
+			referenceSize = 2.0
+			#Maximum individual range after scaling.
+			# Default: 64.0
+			# Range: 1.0 ~ 96.0
+			maximumRange = 64.0
+
+			[advanced.bigCannon.blast.shape]
+				#Forward distance from the light source to zero brightness, at reference size.
+				# Default: 25.0
+				# Range: 0.1 ~ 96.0
+				forwardRange = 15.0
+				# Default: 8.0
+				# Range: 0.1 ~ 96.0
+				rearRange = 8.0
+				#Sideways radius; shape is widest at the source.
+				# Default: 12.0
+				# Range: 0.1 ~ 96.0
+				sideRange = 12.0
+				#Radius perpendicular to the gun axis and side axis; world-up reference, not ship roll.
+				# Default: 12.0
+				# Range: 0.1 ~ 96.0
+				verticalRange = 12.0
+				#Rear clipping distance; approximates muzzle masking, not real occlusion. Set >= rearRange to disable.
+				# Default: 8.0
+				# Range: 0.0 ~ 96.0
+				rearClipDistance = 8.0
+
+			[advanced.bigCannon.blast.spatial]
+				# Default: 0.25
+				# Range: 0.0 ~ 0.9
+				coreFraction = 0.25
+				#Middle segment fraction of the distance remaining after the core.
+				# Default: 0.55
+				# Range: 0.05 ~ 0.95
+				middleFraction = 0.55
+				#Tail starting brightness; capped so outer falloff is slower than middle.
+				# Default: 0.2
+				# Range: 0.0 ~ 0.9
+				tailBrightness = 0.2
+
+			[advanced.bigCannon.blast.time]
+				#Stage lifetime in ticks. Smoke time starts after blast stage; each stage has its own clock.
+				# Default: 2
+				# Range: 1 ~ 600
+				durationTicks = 2
+				# Default: 2
+				# Range: 0 ~ 600
+				peakHoldTicks = 2
+				# Default: 0.0
+				# Range: 0.0 ~ 1.0
+				minimumBrightness = 0.0
+				#Fraction of initial brightness lost per tick after hold.
+				# Default: 0.02
+				# Range: 0.0 ~ 1.0
+				decayPerTick = 0.02
+
+			[advanced.bigCannon.blast.scaling]
+				#Blast: effective CBC charge power. Smoke: heat-weighted rendered quad half-size.
+				# Default: 2.0
+				# Range: 0.1 ~ 64.0
+				referenceSize = 2.0
+				#Maximum individual range after scaling.
+				# Default: 64.0
+				# Range: 1.0 ~ 96.0
+				maximumRange = 64.0
+
+			[advanced.bigCannon.smoke.shape]
+				#Forward distance from the light source to zero brightness, at reference size.
+				# Default: 25.0
+				# Range: 0.1 ~ 96.0
+				forwardRange = 12.0
+				# Default: 8.0
+				# Range: 0.1 ~ 96.0
+				rearRange = 8.0
+				#Sideways radius; shape is widest at the source.
+				# Default: 12.0
+				# Range: 0.1 ~ 96.0
+				sideRange = 12.0
+				#Radius perpendicular to the gun axis and side axis; world-up reference, not ship roll.
+				# Default: 12.0
+				# Range: 0.1 ~ 96.0
+				verticalRange = 12.0
+				#Rear clipping distance; approximates muzzle masking, not real occlusion. Set >= rearRange to disable.
+				# Default: 8.0
+				# Range: 0.0 ~ 96.0
+				rearClipDistance = 8.0
+
+			[advanced.bigCannon.smoke.spatial]
+				# Default: 0.25
+				# Range: 0.0 ~ 0.9
+				coreFraction = 0.25
+				#Middle segment fraction of the distance remaining after the core.
+				# Default: 0.55
+				# Range: 0.05 ~ 0.95
+				middleFraction = 0.55
+				#Tail starting brightness; capped so outer falloff is slower than middle.
+				# Default: 0.2
+				# Range: 0.0 ~ 0.9
+				tailBrightness = 0.2
+
+			[advanced.bigCannon.smoke.time]
+				#Stage lifetime in ticks. Smoke time starts after blast stage; each stage has its own clock.
+				# Default: 28
+				# Range: 1 ~ 600
+				durationTicks = 28
+				# Default: 2
+				# Range: 0 ~ 600
+				peakHoldTicks = 2
+				# Default: 0.0
+				# Range: 0.0 ~ 1.0
+				minimumBrightness = 0.0
+				#Fraction of initial brightness lost per tick after hold.
+				# Default: 0.02
+				# Range: 0.0 ~ 1.0
+				decayPerTick = 0.05
+
+			[advanced.bigCannon.smoke.scaling]
+				#Blast: effective CBC charge power. Smoke: heat-weighted rendered quad half-size.
+				# Default: 2.0
+				# Range: 0.1 ~ 64.0
+				referenceSize = 1.0
+				#Maximum individual range after scaling.
+				# Default: 64.0
+				# Range: 1.0 ~ 96.0
+				maximumRange = 64.0
+
+	[advanced.tracers]
+		#Constant-bright core fraction; linear spatial falloff outside core.
+		# Default: 0.15
+		# Range: 0.0 ~ 0.9
+		coreFraction = 0.15
+
+		[advanced.tracers.autocannon]
+			enabled = false
+			#Concurrent autocannon tracer lights, nearest first; independent from big cannon budget.
+			# Default: 128
+			# Range: 0 ~ 16384
+			maximumCount = 128
+			# Default: 6.0
+			# Range: 0.25 ~ 96.0
+			radius = 6.0
+			# Default: 15.0
+			# Range: 0.0 ~ 15.0
+			brightness = 15.0
+
+		[advanced.tracers.bigCannon]
+			enabled = true
+			# Default: 128
+			# Range: 0 ~ 16384
+			maximumCount = 128
+			# Default: 12.0
+			# Range: 0.25 ~ 96.0
+			radius = 12.0
+			# Default: 15.0
+			# Range: 0.0 ~ 15.0
+			brightness = 15.0
+
+	[advanced.staticSources]
+		# Default: 128.0
+		# Range: 1.0 ~ 4096.0
+		activationDistance = 128.0
+		#Radius for emission level 15; scales linearly with actual block emission.
+		# Default: 15.0
+		# Range: 1.0 ~ 96.0
+		radiusAtLevel15 = 15.0
+
+	[visuals.autocannon]
+		# Default: 9.0
+		# Range: 0.1 ~ 16.0
+		sizeMultiplier = 9.0
+		# Default: 0.5
+		# Range: 0.1 ~ 3.0
+		flameLengthScale = 0.5
+		# Default: 2.0
+		# Range: 0.1 ~ 3.0
+		flameWidthScale = 2.0
+		# Default: 1.0
+		# Range: 0.1 ~ 1.0
+		flameOpacity = 1.0
+		# Default: 3
+		# Range: 1 ~ 20
+		flameDurationTicks = 3
+
+	[legacy.autocannon]
+		# Default: 5
+		# Range: 1 ~ 40
+		lightDurationTicks = 5
+		# Default: 5
+		# Range: 1 ~ 7
+		lightSourceCount = 5
+		# Default: 3.0
+		# Range: 0.0 ~ 24.0
+		lightLength = 3.0
+		# Default: 1.5
+		# Range: 0.0 ~ 24.0
+		lightWidth = 1.5
+
+	[legacy.bigCannon]
+		# Default: 30
+		# Range: 1 ~ 1200
+		durationTicks = 30
+		# Default: 4
+		# Range: 0 ~ 1200
+		peakHoldTicks = 4
+		# Default: 0.0
+		# Range: 0.0 ~ 1.0
+		minimumBrightness = 0.0
+		# Default: 0.02
+		# Range: 0.0 ~ 1.0
+		decayPerTick = 0.02
+		# Default: 7
+		# Range: 1 ~ 7
+		lightSourceCount = 7
+		# Default: 6.0
+		# Range: 0.0 ~ 24.0
+		lightLength = 6.0
+		# Default: 6.0
+		# Range: 0.0 ~ 24.0
+		lightWidth = 6.0
+
+	[legacy.performance]
+		# Default: 256
+		# Range: 7 ~ 448
+		maxLightSources = 256
+
+	[legacy.sable]
+		# Default: 96
+		# Range: 1 ~ 448
+		maxProjectedSources = 96
+		enabled = true
+		debugLogging = false
+
+[tracking]
+	# Default: 0.9
+	# Range: 0.0 ~ 4.0
+	fallbackSpeed = 0.9
+	# Default: 0.6
+	# Range: 0.05 ~ 1.0
+	hotLifetimeFraction = 0.6
+	# Default: 8
+	# Range: 1 ~ 24
+	particlesPerShot = 8
+
+[gpu]
+	#Additive GPU light colour, red channel.
+	# Default: 1.0
+	# Range: 0.0 ~ 4.0
+	colorRed = 1.0
+	#Additive GPU light colour, green channel.
+	# Default: 0.58
+	# Range: 0.0 ~ 4.0
+	colorGreen = 0.58
+	#Additive GPU light colour, blue channel.
+	# Default: 0.25
+	# Range: 0.0 ~ 4.0
+	colorBlue = 0.25
+	#Overall additive strength for the GPU light pass. 0 disables the contribution.
+	# Default: 1.0
+	# Range: 0.0 ~ 4.0
+	intensity = 0.2
+	#Exponent on the normalized light level; above 1 concentrates the light nearer the source.
+	# Default: 1.0
+	# Range: 0.2 ~ 4.0
+	falloffPower = 1.0
+	#Extra strength multiplier applied only while an Iris shader pack is active. The pass then adds light after the pack's tonemapping, so it usually needs a different value than the no-shader path.
+	# Default: 1.0
+	# Range: 0.0 ~ 8.0
+	shaderPathScale = 1.0
+	#How strongly the depth-derived surface normal shapes the light: 0 is the old flat additive look, 1 is full N.L diffuse. Above 0 surfaces facing away from a flash receive no light, which also rejects most 'light through a wall' cases.
+	# Default: 0.6
+	# Range: 0.0 ~ 1.0
+	normalInfluence = 1.0
+	#Enable ONLY after installing the shader pack patch (shaders/include/lighting/cbc_muzzle_light.glsl plus its call in diffuse_lighting.glsl). It turns off the screen-space overlay so the light comes from the pack's own lighting pass instead; leaving it on without the patch, or off with it, gives either no light or doubled light.
+	#Strength for the in-pack lighting path. The pack's own block-light scale multiplies this, so the useful range is different from 'intensity'.
+	# Default: 2.0
+	# Range: 0.0 ~ 16.0
+	packPathIntensity = 2.0
+	# Default: 1
+	# Range: 0 ~ 4
+	shadowLightCount = 1

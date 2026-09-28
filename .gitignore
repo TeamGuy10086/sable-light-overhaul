@@ -1,0 +1,11 @@
+.gradle/
+build/
+run/
+libs/*.jar
+# prepare-libs.ps1 unpacks these out of lamb-runtime.jar, so they are derived third-party binaries too.
+# The single-level pattern above does not reach into a subdirectory, which is how they were getting in.
+libs/**/*.jar
+.idea/
+*.iml
+# Gradle writes its own debug logs here on every build (logs/debug-N.log.gz), and they are not ours.
+logs/

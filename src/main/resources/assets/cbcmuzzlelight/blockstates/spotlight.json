@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "visible=true": {
+      "model": "cbcmuzzlelight:block/spotlight"
+    },
+    "visible=false": {
+      "model": "cbcmuzzlelight:block/spotlight"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# 范围调试建议：在现有配置界面修改以下项，不必替换整个配置文件。
+# 保持 5 个光源；拉开间距并减慢亮度衰减，仍须实测更新开销。
+[bigCannonLight]
+lightSourceCount = 5
+lightLength = 12.0
+lightWidth = 8.0
+peakHoldTicks = 6
+durationTicks = 24
+minimumBrightness = 0.5
+decayPerTick = 0.025

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "visible=true": {
+      "model": "cbcmuzzlelight:block/dust_generator"
+    },
+    "visible=false": {
+      "model": "cbcmuzzlelight:block/dust_generator"
+    }
+  }
+}

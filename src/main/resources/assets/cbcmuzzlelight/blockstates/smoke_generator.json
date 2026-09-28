@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "visible=true": {
+      "model": "cbcmuzzlelight:block/smoke_generator"
+    },
+    "visible=false": {
+      "model": "cbcmuzzlelight:block/smoke_generator"
+    }
+  }
+}

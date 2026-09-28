@@ -1,0 +1,158 @@
+package dev.cbcmuzzlelight.client;
+
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.cbcmuzzlelight.lighting.ImpactParticleData;
+import net.minecraft.client.Camera;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.LightTexture;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+/**
+ * A spark, a streak or a chip thrown by an impact.
+ *
+ * <p>All three use the same physics — a burst velocity, drag, gravity, and a bounce that reflects
+ * whichever axis a surface stopped — because that is what makes a splash read as one event. Only the
+ * drawing differs: a spark is a small bright square, a streak is a scratch drawn along the direction
+ * of travel, a chip is a longer tumbling fragment that dies after its first bounce. Everything is
+ * drawn with a vanilla render type and an atlas sprite, which is what makes it visible under shader
+ * packs, unlike particles that draw themselves through a custom render type.
+ */
+public final class ImpactParticle extends TextureSheetParticle {
+ private final int epoch=ClientFlashes.visualEpoch();
+ private final boolean chip;
+ private final boolean streak;
+ private final float pull;
+ private final float bounce;
+ private final float baseAlpha;
+ private final float glow;
+ private int bounces;
+ private ImpactParticle(ClientLevel level,double x,double y,double z,double dx,double dy,double dz,ImpactParticleData data,SpriteSet sprites){
+  super(level,x,y,z);
+  this.chip=data.isChip();
+  this.streak=data.isStreak();
+  // A chip is heavier and duller, a spark light and quick: same motion model, different numbers.
+  this.pull=this.chip?0.10F:0.05F;
+  this.bounce=Math.min(Math.max(data.bounce(),0.0F),1.0F);
+  this.baseAlpha=this.chip?0.7F:1.0F;
+  this.glow=Math.min(Math.max(data.glow(),0.0F),4.0F);
+  this.lifetime=Math.max(2,data.lifetime());
+  this.gravity=1.0F;
+  this.friction=this.chip?0.94F:0.97F;
+  this.hasPhysics=true;
+  this.quadSize=Math.max(0.02F,data.size());
+  int rgb=data.color();
+  this.setColor(((rgb>>16)&0xFF)/255.0F,((rgb>>8)&0xFF)/255.0F,(rgb&0xFF)/255.0F);
+  this.setAlpha(baseAlpha);
+  this.setParticleSpeed(dx,dy,dz);
+  this.roll=random.nextFloat()*6.2832F;
+  this.oRoll=this.roll;
+  this.setSprite(sprites.get(this.random));
+ }
+ @Override public void tick(){
+  if(!ClientFlashes.effectsEnabled()||epoch!=ClientFlashes.visualEpoch()){remove();return;}
+  this.xo=this.x;this.yo=this.y;this.zo=this.z;
+  double wasX=xd,wasY=yd,wasZ=zd;
+  this.yd-=0.04*this.pull;
+  this.move(this.xd,this.yd,this.zd);
+  // move() zeroes whichever axis a surface stopped, so a bounce is that axis reflected. A chip stops
+  // after its first bounce and a spark keeps skipping, which is the whole difference between them.
+  boolean hit=false;
+  if(wasX!=0.0&&xd==0.0){xd=-wasX*bounce;hit=true;}
+  if(wasY!=0.0&&yd==0.0){yd=-wasY*bounce;hit=true;}
+  if(wasZ!=0.0&&zd==0.0){zd=-wasZ*bounce;hit=true;}
+  if(hit&&++bounces>(chip?1:3)){remove();return;}
+  if(chip)this.roll+=0.45F;
+  this.age++;
+  float progress=(float)this.age/this.lifetime;
+  this.setAlpha(baseAlpha*(1.0F-progress*progress));
+  EmissiveParticles.report(x,y,z,rCol,gCol,bCol,glow*(1.0F-progress));
+  if(this.age>=this.lifetime)remove();
+ }
+ @Override public ParticleRenderType getRenderType(){return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;}
+ /** Sparks and chips are their own light source, so they are never dimmed by where they are. */
+ @Override public int getLightColor(float partialTick){return LightTexture.FULL_BRIGHT;}
+ @Override public void render(VertexConsumer buffer,Camera camera,float partialTick){
+  if(!ClientFlashes.effectsEnabled()||epoch!=ClientFlashes.visualEpoch())return;
+  var cameraPos=camera.getPosition();
+  float ox=(float)(this.x-cameraPos.x),oy=(float)(this.y-cameraPos.y),oz=(float)(this.z-cameraPos.z);
+  int light=this.getLightColor(partialTick);
+  float half=this.getQuadSize(partialTick)*0.5F;
+  if(streak){
+   renderStreak(buffer,ox,oy,oz,half,light);
+   return;
+  }
+  Quaternionf rotation=camera.rotation();
+  Vector3f right=new Vector3f(1.0F,0.0F,0.0F).rotate(rotation);
+  Vector3f up=new Vector3f(0.0F,1.0F,0.0F).rotate(rotation);
+  float halfWidth=chip?half*2.2F:half;
+  if(chip){
+   float cos=(float)Math.cos(roll),sin=(float)Math.sin(roll);
+   Vector3f spunRight=new Vector3f(right.x*cos+up.x*sin,right.y*cos+up.y*sin,right.z*cos+up.z*sin);
+   Vector3f spunUp=new Vector3f(up.x*cos-right.x*sin,up.y*cos-right.y*sin,up.z*cos-right.z*sin);
+   right=spunRight;up=spunUp;
+  }
+  quad(buffer,ox,oy,oz,right,up,halfWidth,half,light);
+ }
+ /**
+  * A scratch along the direction of travel, the way the original spur is drawn: two crossed quads
+  * whose length follows the speed, so a fast spark leaves a longer line and a slowed one shrinks.
+  */
+ private void renderStreak(VertexConsumer buffer,float ox,float oy,float oz,float half,int light){
+  double dx=this.x-this.xo,dy=this.y-this.yo,dz=this.z-this.zo;
+  double speed=Math.sqrt(dx*dx+dy*dy+dz*dz);
+  if(speed<1.0E-5)return;
+  Vector3f forward=new Vector3f((float)(dx/speed),(float)(dy/speed),(float)(dz/speed));
+  Vector3f side=new Vector3f(forward).cross(0.0F,1.0F,0.0F);
+  if(side.lengthSquared()<1.0E-4)side.set(1.0F,0.0F,0.0F);
+  side.normalize();
+  Vector3f up=new Vector3f(side).cross(forward).normalize();
+  float length=(float)Math.min(speed,1.0)*1.6F+half;
+  streakQuad(buffer,ox,oy,oz,forward,side,length,half,light);
+  streakQuad(buffer,ox,oy,oz,forward,up,length,half,light);
+ }
+ private void streakQuad(VertexConsumer buffer,float ox,float oy,float oz,Vector3f forward,Vector3f width,float length,float half,int light){
+  Vector3f a=new Vector3f(width).mul(-half);
+  Vector3f b=new Vector3f(width).mul(half);
+  // One winding is chosen by which side the camera is on, so a crossed pair is visible from anywhere.
+  boolean front=forward.cross(width,new Vector3f()).dot(-ox,-oy,-oz)>=0.0F;
+  if(front){
+   vertex(buffer,ox,oy,oz,forward,0.0F,a,this.getU0(),this.getV1(),light);
+   vertex(buffer,ox,oy,oz,forward,length,a,this.getU1(),this.getV1(),light);
+   vertex(buffer,ox,oy,oz,forward,length,b,this.getU1(),this.getV0(),light);
+   vertex(buffer,ox,oy,oz,forward,0.0F,b,this.getU0(),this.getV0(),light);
+  }else{
+   vertex(buffer,ox,oy,oz,forward,0.0F,b,this.getU0(),this.getV0(),light);
+   vertex(buffer,ox,oy,oz,forward,length,b,this.getU1(),this.getV0(),light);
+   vertex(buffer,ox,oy,oz,forward,length,a,this.getU1(),this.getV1(),light);
+   vertex(buffer,ox,oy,oz,forward,0.0F,a,this.getU0(),this.getV1(),light);
+  }
+ }
+ private void quad(VertexConsumer buffer,float ox,float oy,float oz,Vector3f right,Vector3f up,float halfWidth,float halfHeight,int light){
+  vertex(buffer,ox,oy,oz,right,up,-halfWidth,-halfHeight,this.getU0(),this.getV1(),light);
+  vertex(buffer,ox,oy,oz,right,up,halfWidth,-halfHeight,this.getU1(),this.getV1(),light);
+  vertex(buffer,ox,oy,oz,right,up,halfWidth,halfHeight,this.getU1(),this.getV0(),light);
+  vertex(buffer,ox,oy,oz,right,up,-halfWidth,halfHeight,this.getU0(),this.getV0(),light);
+ }
+ private void vertex(VertexConsumer buffer,float ox,float oy,float oz,Vector3f right,Vector3f up,float dx,float dy,float u,float v,int light){
+  buffer.addVertex(ox+right.x()*dx+up.x()*dy,oy+right.y()*dx+up.y()*dy,oz+right.z()*dx+up.z()*dy)
+    .setUv(u,v).setColor(rCol,gCol,bCol,alpha).setLight(light);
+ }
+ /** One corner of a streak, placed by moving along {@code forward} and then sideways. */
+ private void vertex(VertexConsumer buffer,float ox,float oy,float oz,Vector3f forward,float along,Vector3f side,float u,float v,int light){
+  buffer.addVertex(ox+forward.x()*along+side.x(),oy+forward.y()*along+side.y(),oz+forward.z()*along+side.z())
+    .setUv(u,v).setColor(rCol,gCol,bCol,alpha).setLight(light);
+ }
+ public static final class Provider implements ParticleProvider<ImpactParticleData> {
+  private final SpriteSet sprites;
+  public Provider(SpriteSet sprites){this.sprites=sprites;}
+  @Override public Particle createParticle(ImpactParticleData data,ClientLevel level,double x,double y,double z,double dx,double dy,double dz){
+   return new ImpactParticle(level,x,y,z,dx,dy,dz,data,sprites);
+  }
+ }
+}

@@ -1,0 +1,19 @@
+# Line endings are NOT converted, ever.
+#
+# This repository deliberately holds both LF and CRLF files. The .ps1 scripts and some of the older
+# Java sources were written by tools that chose CRLF; HANDOFF.zh-CN.md, patch/*.md and the newer Java
+# files are LF. Nothing downstream cares -- javac, Gradle, PowerShell and the JSON parser all accept
+# either -- but a conversion would: `core.autocrlf=true`, which the Git for Windows installer often
+# sets, rewrites every LF file to CRLF on checkout, so the whole tree looks modified and real changes
+# get buried in the noise. `-text` pins every file to exactly the bytes it has.
+#
+# Set per repository, not globally, so nothing else on this machine is affected.
+* -text
+
+# Binary: no diff attempted, and no conversion can ever happen to them.
+*.jar binary
+*.zip binary
+*.png binary
+*.gz binary
+*.nbt binary
+*.dat binary

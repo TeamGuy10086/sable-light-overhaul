@@ -1,0 +1,1 @@
+Compile/test dependencies only, not redistributed. Use prepare-libs.ps1 with CBC 5.11.7, CBCAT 0.1.4c, Sable 2.0.3, LambDynamicLights 4.8.11+1.21.1, Create 6.0.10 (embedded Flywheel 1.0.6). Java 21. Full build includes optional-mod binary contract tests.

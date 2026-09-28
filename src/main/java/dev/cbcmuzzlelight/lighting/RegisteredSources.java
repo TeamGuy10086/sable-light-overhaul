@@ -1,0 +1,115 @@
+package dev.cbcmuzzlelight.lighting;
+import java.util.*;
+import net.minecraft.core.*;
+import net.minecraft.nbt.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedData;
+public final class RegisteredSources extends SavedData {
+ /**
+  * @param color palette index, or {@link SourceColor#AUTO} when the block's own id decides it
+  * @param radius light radius in blocks, or {@link #RADIUS_AUTO} to derive it from the brightness
+  * @param shadowMode the lamp's own answer on whether its shadow is drawn at all and how: 0 none,
+  *                   1 a hard edge, 2 a soft one. It is a wish, not a decision -- the client's own
+  *                   config caps the tap count and can force hard edges, so a lamp cannot spend a
+  *                   visitor's frame time without their leave. Spheres only; a beam ignores it and
+  *                   stays hard.
+  * @param shadowSteps this lamp's own tap ceiling, or {@link #SHADOW_STEPS_AUTO} for the client's.
+  *                    Only ever lowers it, for the same reason.
+  */
+ public record Entry(int id,SourceAnchor anchor,int mode,boolean spotlight,int color,int radius,
+                     int shadowMode,int shadowSteps) {}
+ /** No radius of its own: the radius follows the block's brightness, as it always did. */
+ public static final int RADIUS_AUTO=0;
+ /** The lamp's shadow is soft unless its page says otherwise: the shipped default for a new lamp. */
+ public static final int SHADOW_SOFT=2;
+ /** No tap ceiling of its own; the client's applies. */
+ public static final int SHADOW_STEPS_AUTO=0;
+ public final Map<Integer,Entry> entries=new LinkedHashMap<>();private int nextId=1;
+ public static RegisteredSources get(ServerLevel level) {return level.getDataStorage().computeIfAbsent(new Factory<>(RegisteredSources::new,RegisteredSources::load),"cbcmuzzlelight_sources");}
+ public Entry find(SourceAnchor a,boolean spot) {return entries.values().stream().filter(e->e.spotlight==spot && e.anchor.equals(a)).findFirst().orElse(null);}
+ /**
+  * Cycle one ground registration: none → enabled → forced → none. A new entry is
+  * stored as {@link SourceColor#AUTO}, so the block's own id keeps deciding its colour until a dye
+  * overrides it; that way a config or name change lands without re-registering anything.
+  * @param a - the block's anchor.
+  * @returns the new mode.
+  */
+ public int cycle(SourceAnchor a) {
+  var e=find(a,false);int mode=e==null?1:(e.mode+1)%3;
+  if(e!=null)entries.remove(e.id);if(mode!=0){int id=e==null?nextId++:e.id;entries.put(id,new Entry(id,a,mode,false,e==null?SourceColor.AUTO:e.color(),e==null?RADIUS_AUTO:e.radius(),e==null?SHADOW_SOFT:e.shadowMode(),e==null?SHADOW_STEPS_AUTO:e.shadowSteps()));}setDirty();return mode;
+ }
+ /** Set one registration's palette index explicitly, the way a dye item does. */
+ public boolean setColor(SourceAnchor a,int color) {
+  var e=find(a,false);if(e==null)return false;
+  entries.put(e.id,new Entry(e.id,e.anchor,e.mode,false,color,e.radius(),e.shadowMode(),e.shadowSteps()));setDirty();return true;
+ }
+ /**
+  * Set one registration's own light radius in blocks, or {@link #RADIUS_AUTO} to leave it to the
+  * brightness. Only a registered source has a radius to set, so an unregistered anchor is refused.
+  */
+ public boolean setRadius(SourceAnchor a,int radius) {
+  var e=find(a,false);if(e==null)return false;
+  entries.put(e.id,new Entry(e.id,e.anchor,e.mode,false,e.color(),radius,e.shadowMode(),e.shadowSteps()));setDirty();return true;
+ }
+ /**
+  * Set one registration's shadow behaviour: whether it casts, and how many taps it may spend.
+  *
+  * <p>It is the lamp's own wish. The client applies it only as far as its own budget allows, which is
+  * what stops a lamp on somebody else's vehicle from deciding a visitor's frame time.
+  */
+ public boolean setShadow(SourceAnchor a,int shadowMode,int shadowSteps) {
+  var e=find(a,false);if(e==null)return false;
+  entries.put(e.id,new Entry(e.id,e.anchor,e.mode,false,e.color(),e.radius(),shadowMode,shadowSteps));setDirty();return true;
+ }
+ /**
+  * Set one registration's mode directly, the way a cycle does: 0 unregisters, 1 and 2 register or
+  * update. A source that is already registered keeps its colour, its radius and its shadow behaviour,
+  * because the page writes one field at a time and changing the mode must not silently drop the rest.
+  * @param a - the block's anchor.
+  * @param mode - the new mode.
+  * @returns whether anything changed; unregistering an unregistered anchor changes nothing.
+  */
+ public boolean setMode(SourceAnchor a,int mode) {
+  var e=find(a,false);
+  if(mode<=0){if(e==null)return false;entries.remove(e.id);setDirty();return true;}
+  if(e==null){register(a,mode);return true;}
+  entries.put(e.id,new Entry(e.id,e.anchor,mode,false,e.color(),e.radius(),e.shadowMode(),e.shadowSteps()));setDirty();return true;
+ }
+ public void spotlight(SourceAnchor a,boolean add) {var e=find(a,true);if(add&&e==null){int id=nextId++;entries.put(id,new Entry(id,a,2,true,SourceColor.UNTINTED,RADIUS_AUTO,SHADOW_SOFT,SHADOW_STEPS_AUTO));setDirty();}else if(!add&&e!=null){entries.remove(e.id);setDirty();}}
+ /** Batch path: sets a ground registration's mode directly, adding it when it does not exist yet. */
+ public Entry register(SourceAnchor a,int mode) {
+  var e=find(a,false);int id=e==null?nextId++:e.id;
+  var entry=new Entry(id,a,mode,false,e==null?SourceColor.AUTO:e.color(),e==null?RADIUS_AUTO:e.radius(),e==null?SHADOW_SOFT:e.shadowMode(),e==null?SHADOW_STEPS_AUTO:e.shadowSteps());entries.put(id,entry);setDirty();return entry;
+ }
+ /**
+  * Registers an anchor only when it has no registration yet, so an existing mode and colour survive.
+  *
+  * <p>This is what a stand-in placed by hand uses: it must become a light, but a lamp that was already
+  * registered keeps the mode and dye colour its owner chose.
+  * @returns true when a registration was added.
+  */
+ public boolean ensure(SourceAnchor a,int mode) {
+  if(find(a,false)!=null)return false;
+  register(a,mode);return true;
+ }
+ /** Batch path: drops a ground registration by anchor, so a range command does not need its id. */
+ public boolean removeAnchor(SourceAnchor a) {
+  var e=find(a,false);if(e==null)return false;entries.remove(e.id);setDirty();return true;
+ }
+ public boolean remove(int id) {if(entries.remove(id)==null)return false;setDirty();return true;}
+ public static RegisteredSources load(CompoundTag tag,HolderLookup.Provider registries) {
+  var data=new RegisteredSources();data.nextId=Math.max(1,tag.getInt("NextId"));
+  var list=tag.getList("Sources",Tag.TAG_COMPOUND);
+  for(var raw:list){var t=(CompoundTag)raw;int id=t.getInt("Id"),mode=t.getInt("Mode");if(id<=0||mode<1||mode>2)continue;
+   var a=new SourceAnchor(t.hasUUID("Ship")?t.getUUID("Ship"):null,BlockPos.of(t.getLong("Pos")));
+   // A world written before these two existed gets the shipped defaults, not zeroes: shadowMode 0 would
+   // silently turn every existing lamp's shadow off on the first load after the update.
+   int shadowMode=t.contains("ShadowMode")?t.getInt("ShadowMode"):SHADOW_SOFT;
+   int shadowSteps=t.contains("ShadowSteps")?t.getInt("ShadowSteps"):SHADOW_STEPS_AUTO;
+   data.entries.put(id,new Entry(id,a,mode,t.getBoolean("Spotlight"),t.contains("Color")?t.getInt("Color"):SourceColor.AUTO,t.contains("Radius")?t.getInt("Radius"):RADIUS_AUTO,shadowMode,shadowSteps));data.nextId=Math.max(data.nextId,id+1);
+  }return data;
+ }
+ @Override public CompoundTag save(CompoundTag tag,HolderLookup.Provider registries) {
+  tag.putInt("NextId",nextId);var list=new ListTag();for(var e:entries.values()) {var t=new CompoundTag();t.putInt("Id",e.id);t.putInt("Mode",e.mode);t.putBoolean("Spotlight",e.spotlight);t.putInt("Color",e.color);t.putInt("Radius",e.radius);t.putInt("ShadowMode",e.shadowMode);t.putInt("ShadowSteps",e.shadowSteps);t.putLong("Pos",e.anchor.pos().asLong());if(e.anchor.ship()!=null)t.putUUID("Ship",e.anchor.ship());list.add(t);}tag.put("Sources",list);return tag;
+ }
+}
