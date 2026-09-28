@@ -875,6 +875,11 @@ requestService = new RequestProcessingService(server);
   （排查代理时就这么被骗了两轮。）同理：验证外部命令行为时要**打印它实际用到的目的地/参数**，别只看退出码。
 - **git 的 `http.<url>.proxy` 优先级高于 `http.proxy`** —— 想临时清掉代理，要覆盖 `http.<url>.proxy` 本身
   （`-c http.https://github.com.proxy=`），覆盖 `http.proxy` 是没用的。
+- **重命名仓库顶层目录会被 Windows 拒绝**（`Move-Item` 报 Access denied，`cmd move` 也一样），
+  但目录**内部**读写与**子目录改名**都正常 —— 说明是**有句柄挂在这个顶层目录上**
+  （这台机器上最可能是 Windows Search 索引器 `SearchIndexer`，也可能是有 Explorer 窗口开在那个路径）。
+  绕法：`robocopy <旧> <新> /E /MOVE /COPY:DAT /DCOPY:DAT /R:2 /W:1`（**退出码 1 是成功**，含义是"有文件被复制"）。
+  移完**必须核对文件数**（本次 2201 → 2201）并 `git -C <新路径> status` —— `.git` 是跟着一起搬的。
 - 单位/物理护栏：`velocity` 是**每物理步** Δv（≤5.0），`physicsSteps` 是倍数；
   永远不要把位置当冲量传（`applyImpulseAtPoint` 的参数顺序曾经搞反，Δv=1e-15 就把载具打飞了）；
   施加前后都要打日志。
