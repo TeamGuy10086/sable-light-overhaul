@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 group = 'dev.sablelightoverhaul'
-version = '0.1.643'
+version = '0.1.644'
 base { archivesName = 'sable-light-overhaul' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
 neoForge {

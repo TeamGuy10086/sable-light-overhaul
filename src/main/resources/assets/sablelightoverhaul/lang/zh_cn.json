@@ -819,6 +819,8 @@
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.flipbook": "预烘焙烟雾动画",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.performanceMode": "烟雾性能档",
   "sablelightoverhaul.text.7f45daa6e593986d": "使用预烘焙遮罩计算热烟材质的边缘侵蚀和冷烟透明度纹理。可实时切换对比，保留烟量、运动及消散曲线。",
+  "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeCull": "弱透明烟边早退",
+  "sablelightoverhaul.text.f43be5398cd13439": "试验档：让几乎透明的热烟材质片元在进入后续受光与混合前退出，弱边缘渐退。关闭可恢复原始透明度曲线。",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.simpleLighting": "简化受光",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.ambientGain": "环境底色倍率",
   "sablelightoverhaul.config.key.particles.muzzle.tankCannon.smokeCached": "预烘焙单面坦克烟",

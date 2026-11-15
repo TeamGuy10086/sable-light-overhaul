@@ -105,7 +105,7 @@ class ConfigCatalogTest {
         }
         org.junit.jupiter.api.Assertions.assertEquals(ConfigTaxonomy.CATEGORIES.size() - 1, categories.size(),
                 "both specs together must cover all ten categories, found " + categories);
-        org.junit.jupiter.api.Assertions.assertEquals(333, clientRows,
+        org.junit.jupiter.api.Assertions.assertEquals(334, clientRows,
                 "the client catalogue changed size; update CONFIG-MAP and this number together");
         org.junit.jupiter.api.Assertions.assertEquals(178, serverRows,
                 "the server catalogue changed size; update CONFIG-MAP and this number together");

@@ -86,6 +86,17 @@ uniform sampler2D sloSmokeAtlas;
 uniform sampler2D sloTankSmokeAtlas;
 uniform sampler2D sloSmokeMask;
 uniform int sloSmokePerformance;
+uniform int sloSmokeEdgeCull;
+const float SLO_SMOKE_EDGE_MIN = 0.012;
+const float SLO_SMOKE_EDGE_FULL = 0.045;
+
+void slo_thermal_shape(vec2 p,float seed,vec4 tint);
+
+float slo_soft_smoke_alpha(float alpha) {
+    if(sloSmokeEdgeCull==0) return alpha;
+    if(alpha<=SLO_SMOKE_EDGE_MIN) discard;
+    return alpha*smoothstep(SLO_SMOKE_EDGE_MIN,SLO_SMOKE_EDGE_FULL,alpha);
+}
 
 // Six seed-stable tiles. Sample between texel centers without crossing a tile boundary.
 vec2 slo_baked_smoke_mask(vec2 p, float id) {
@@ -94,7 +105,7 @@ vec2 slo_baked_smoke_mask(vec2 p, float id) {
     return texture(sloSmokeMask,pixel/vec2(128.0,768.0)).rg;
 }
 uniform vec4 sloSmokeOptions; // baked material, simple lighting, ambient gain, emission gain
-vec4 slo_smoke_flipbook(vec2 p,float encoded,vec4 tint) {
+vec4 slo_smoke_flipbook(vec2 p,float encoded,float steady,vec4 tint) {
     float id=mod(-encoded-128.0,64.0),age=clamp(floor((-encoded-128.0)/64.0)/32.0,0.0,8.0);
     float frame=age<=1.0?age*15.0:15.0+(age-1.0)*(16.0/7.0);
     float first=floor(frame),last=min(first+1.0,31.0),variant=mod(id,6.0);
@@ -103,6 +114,16 @@ vec4 slo_smoke_flipbook(vec2 p,float encoded,vec4 tint) {
     vec2 uvA=(vec2(mod(a,8.0),floor(a/8.0))*132.0+local)/vec2(1056.0,3168.0);
     vec2 uvB=(vec2(mod(b,8.0),floor(b/8.0))*132.0+local)/vec2(1056.0,3168.0);
     vec4 data=mix(texture(sloSmokeAtlas,uvA),texture(sloSmokeAtlas,uvB),fract(frame));
+    // The mask can only reduce coverage. Bound it with the steepest supported
+    // core (Complementary) and its boosted lifespan before evaluating the mask.
+    float alpha=1.0-pow(max(1.0-data.a,1e-5),steady);
+    if(sloSmokeEdgeCull!=0) {
+        float body=smoothstep(0.55*sloThermalCut,sloThermalCut+0.11,alpha);
+        float fringe=0.35*smoothstep(0.0,sloThermalCut+0.20,alpha);
+        float maxCoverage=min(1.0,1.8*sloThermalLife)*mix(fringe,1.0,body);
+        if(maxCoverage<=SLO_SMOKE_EDGE_MIN) discard;
+    }
+    slo_thermal_shape(p,encoded,tint);
     vec3 fields=data.rgb/max(data.a,1e-5); // filter premultiplied data to avoid coloured rims
     // Bake each lobe's nonlinear cooling before composition. Averaging noise first washes out pockets.
     // Data channels are cold shade*(1-heat), heat, heat^2; palette is linear in these moments.
@@ -111,9 +132,7 @@ vec4 slo_smoke_flipbook(vec2 p,float encoded,vec4 tint) {
     float sootDetail=age>=1.0?0.0:fields.b;
     vec3 albedo=vec3(.48,.50,.53)*fields.r+vec3(.85,.20,.025)*sloThermalHeat
         +vec3(.15,.62,.415)*sootDetail;
-    // Scale optical depth instead of multiplying a precomposed alpha; zero opacity stays exactly zero.
-    float alpha=1.0-pow(max(1.0-data.a,1e-5),max(tint.a,0.0));
-    return vec4(albedo*tint.rgb,alpha);
+    return vec4(albedo,alpha);
 }
 
 // Cold atlas: RGB stores each lobe coverage, A stores composed premultiplied grey/1.2.
@@ -135,10 +154,7 @@ vec4 slo_tank_smoke_cached(vec2 p,float seed,vec4 tint) {
 //
 // Red carries the steady density; alpha carries that density times the lifecycle envelope.
 // Keep the density mask steady while the whole puff becomes more transmissive.
-vec4 slo_smoke_tinted(vec2 p,float seed,vec4 tint) {
-    sloThermalCut=0.0;
-    sloThermalLife=1.0;
-    sloThermalIslands=1.0;
+void slo_thermal_shape(vec2 p,float seed,vec4 tint) {
     bool thermal=abs(seed)>=128.0;
     bool erode=thermal && tint.g>0.0;
     bool detail=thermal && tint.b<0.998;
@@ -171,6 +187,14 @@ vec4 slo_smoke_tinted(vec2 p,float seed,vec4 tint) {
             sloThermalIslands*=pow(mottling,3.0*(1.0-tint.b));
         }
     }
+}
+
+vec4 slo_smoke_tinted(vec2 p,float seed,vec4 tint) {
+    sloThermalCut=0.0;
+    sloThermalLife=1.0;
+    sloThermalIslands=1.0;
+    bool flipbook=seed<=-128.0 && sloSmokeOptions.x>.5;
+    if(!flipbook) slo_thermal_shape(p,seed,tint);
     if(seed<=-64.0 && seed>-128.0) return slo_tank_smoke_cached(p,seed,tint);
     if(seed > -128.0) {
         if(seed >= 128.0) {
@@ -185,12 +209,12 @@ vec4 slo_smoke_tinted(vec2 p,float seed,vec4 tint) {
     }
     float steady=clamp(tint.r,0.05,1.0);
     sloThermalLife=clamp(tint.a/max(steady,1e-4),0.0,1.0);
-    if(sloSmokeOptions.x>.5) {
+    if(flipbook) {
         // Flipbook coverage peaks at 1 (not at the lobe union), so its cut is in post-pow alpha
         // units: at the default steady 0.48 this discards atlas coverage below ~0.20, the tail of
         // the baked distribution rather than its body.
         sloThermalCut=(1.0-pow(0.80,steady));
-        return slo_smoke_flipbook(p,seed,vec4(1.0,1.0,1.0,steady));
+        return slo_smoke_flipbook(p,seed,steady,tint);
     }
     float encoded=-seed,id=mod(encoded-128.0,64.0),frame=floor((encoded-128.0)/64.0);
     vec3 premul=vec3(0.0);float alpha=0.0,heat=0.0;
@@ -225,5 +249,5 @@ vec4 slo_thermal_coverage(vec4 smoke) {
     float coverage=core+(1.0-core)*fringe;
     // Thin the density locally while preserving smoke until the lifetime fade.
     coverage*=sloThermalIslands;
-    return vec4(smoke.rgb,0.94*sloThermalLife*coverage);
+    return vec4(smoke.rgb,slo_soft_smoke_alpha(0.94*sloThermalLife*coverage));
 }

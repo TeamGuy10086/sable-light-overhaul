@@ -26,7 +26,7 @@ vec4 slo_particle_color(int kind, vec3 local, vec4 params, vec4 tint, vec3 viewP
             float fringe = 0.35 * smoothstep(0.0, sloThermalCut + 0.20, color.a);
             float life = sloThermalLife;
             float denseLife = life * (1.0 + (1.0 - life) * (0.8 + 0.2 * life));
-            color.a = sloThermalIslands * mix(fringe * life, denseLife, body);
+            color.a = slo_soft_smoke_alpha(sloThermalIslands * mix(fringe * life, denseLife, body));
             color.rgb += vec3(2.2, 0.72, 0.12) * sloThermalHeat * sloSmokeOptions.w * SLO_COMPLEMENTARY_EMISSION;
         }
     } else if (kind == 5) {

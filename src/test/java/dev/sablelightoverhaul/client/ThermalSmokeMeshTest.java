@@ -63,7 +63,7 @@ class ThermalSmokeMeshTest {
  @Test void configIsRegisteredInItsOwnGroupWithoutChangingFollowingKeys(){
   var source=new dev.sablelightoverhaul.client.ui.TomlSource(MuzzleClientConfig.SPEC,java.util.Set.of());
   var group=source.groups().stream().filter(g->g.topic().equals("大炮热烟团")).findFirst().orElseThrow();
-  assertEquals("大炮",group.section());assertEquals(30,group.fields().size());
+  assertEquals("大炮",group.section());assertEquals(31,group.fields().size());
   assertTrue(group.fields().stream().anyMatch(field->field.key().equals("particles.muzzle.bigCannon.thermalSmoke.densityDetail")));
   assertTrue(source.read().containsKey("particles.muzzle.tankCannon.afterSmoke.exitSpeed"));
   assertTrue(BigSmokeConfig.SCALE.getSpec().test(16.0));assertTrue(BigSmokeConfig.COUNT.getSpec().test(256));

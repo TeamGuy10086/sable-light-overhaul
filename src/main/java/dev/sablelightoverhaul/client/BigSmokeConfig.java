@@ -7,7 +7,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
  * Defined from the existing muzzle spec builder via {@link #define}; disabling it falls back to native CBC muzzle smoke.
  */
 public final class BigSmokeConfig {
- public static ModConfigSpec.BooleanValue ENABLED,SINGLE_PASS,FLIPBOOK,SIMPLE_LIGHTING,PERFORMANCE;
+ public static ModConfigSpec.BooleanValue ENABLED,SINGLE_PASS,FLIPBOOK,SIMPLE_LIGHTING,PERFORMANCE,SOFT_EDGE_CULL;
  public static ModConfigSpec.DoubleValue SCALE, LENGTH, DIAMETER, OPACITY, RISE, SPREAD, EXPANSION, FADE_FROM, FLASH_LINK, CHARGE_REFERENCE, CHARGE_EXPONENT, CHARGE_MAX, AMBIENT_GAIN, EMISSION_GAIN, ROOT_HOT_SCALE, TIP_HOT_SCALE, COLD_FRACTION, COLD_SIZE, CURL, DENSITY_DETAIL;
  public static ModConfigSpec.IntValue LIFE, HOT_TICKS, RELEASE_TICKS, COUNT, LIMIT;
 
@@ -47,6 +47,7 @@ public final class BigSmokeConfig {
   CHARGE_MAX=b.comment("装药尺寸倍率上限（0.1~16），默认6；替代旧固定1.8上限。极大尺寸仍可能有明显透明绘制开销。").defineInRange("chargeMaxScale",6.0,.1,16.0);
   FLIPBOOK=b.comment("六组预烘焙烟雾动画，默认开启；每瓣随机选一组并插值播放。关闭恢复程序化噪声供A/B；不改变运动、数量和透明层。开启时统一单面绘制，singlePass仅控制旧程序化路径。").define("flipbook",true);
   PERFORMANCE=b.comment("使用预烘焙遮罩计算热烟材质的边缘侵蚀和冷烟透明度纹理。可实时切换对比，保留烟量、运动及消散曲线。").define("performanceMode",false);
+  SOFT_EDGE_CULL=b.comment("试验档：让几乎透明的热烟材质片元在进入后续受光与混合前退出，弱边缘渐退。关闭可恢复原始透明度曲线。").define("softEdgeCull",false);
   SIMPLE_LIGHTING=b.comment("大炮热烟使用环境底色和燃烧自发光，默认开启；跳过逐灯受光和太阳阴影。跟烟光源仍照亮周围，冷却/消散不变。关闭恢复完整受光供A/B，仅Advanced路径生效。").define("simpleLighting",true);
   AMBIENT_GAIN=b.comment("简化受光的环境底色倍率，0~8，默认1；随环境亮度变化，不影响照亮周围的光源。").defineInRange("ambientGain",1.0,0.0,8.0);
   EMISSION_GAIN=b.comment("Advanced热斑自发光倍率，0~128，默认128；简化和完整受光均生效，冷烟不发光；不改变跟烟光源的亮度。").defineInRange("emissionGain",128.0,0.0,128.0);

@@ -538,6 +538,7 @@ public final class IrisMuzzleBridge {
         // Autocannon lobed field: one continuous gas body, not extra billboards. The shader treats
         // strength 0 as the exact 0.1.505 stream, so these two uniforms are also the live A/B switch.
         holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloSmokePerformance",()-> SmokeBenchmark.performanceEnabled()?1:0);
+        holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloSmokeEdgeCull",()-> BigSmokeConfig.SOFT_EDGE_CULL.get()?1:0);
         holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloSmokeOptions",()-> SMOKE_OPTIONS.set(
             BigSmokeConfig.FLIPBOOK.get()?1:0,BigSmokeConfig.SIMPLE_LIGHTING.get()?1:0,
             BigSmokeConfig.AMBIENT_GAIN.get().floatValue(),BigSmokeConfig.EMISSION_GAIN.get().floatValue()));
