@@ -87,6 +87,9 @@ public final class MuzzleParticleLayer {
         shader.safeGetUniform("sloNativeScreenSize").set((float) target.width, (float) target.height);
         shader.setSampler("sloSmokeAtlas",SmokeFlipbook.texture());
         shader.setSampler("sloTankSmokeAtlas",SmokeFlipbook.tankTexture());
+        boolean smokePerformance = BigSmokeConfig.PERFORMANCE.get();
+        shader.setSampler("sloSmokeMask",smokePerformance ? SmokeFlipbook.maskTexture() : 0);
+        shader.safeGetUniform("sloSmokePerformance").set(smokePerformance ? 1 : 0);
         shader.safeGetUniform("sloSmokeOptions").set(BigSmokeConfig.FLIPBOOK.get()?1f:0f,
             BigSmokeConfig.SIMPLE_LIGHTING.get()?1f:0f,BigSmokeConfig.AMBIENT_GAIN.get().floatValue(),BigSmokeConfig.EMISSION_GAIN.get().floatValue());
         shader.safeGetUniform("sloAutoGas").set(AUTO_GAS_A.set(

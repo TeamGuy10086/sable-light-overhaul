@@ -6,6 +6,8 @@ public final class SmokeFlipbook {
  public static final ResourceLocation ATLAS=ResourceLocation.fromNamespaceAndPath("sablelightoverhaul","textures/effect/thermal_smoke.png");
  public static final ResourceLocation TANK_ATLAS=ResourceLocation.fromNamespaceAndPath("sablelightoverhaul","textures/effect/tank_smoke.png");
  public static int tankTexture(){return Minecraft.getInstance().getTextureManager().getTexture(TANK_ATLAS).getId();}
+ private static final ResourceLocation MASK=ResourceLocation.fromNamespaceAndPath("sablelightoverhaul","textures/effect/thermal_smoke_mask.png");
+ public static int maskTexture(){return Minecraft.getInstance().getTextureManager().getTexture(MASK).getId();}
  private SmokeFlipbook(){}
  public static int texture(){return Minecraft.getInstance().getTextureManager().getTexture(ATLAS).getId();}
 }

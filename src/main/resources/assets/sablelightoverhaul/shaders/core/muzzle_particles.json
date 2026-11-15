@@ -6,7 +6,8 @@
         { "name": "Sampler0" },
         { "name": "Sampler2" },
         { "name": "sloSmokeAtlas" },
-        { "name": "sloTankSmokeAtlas" }
+        { "name": "sloTankSmokeAtlas" },
+        { "name": "sloSmokeMask" }
     ],
     "uniforms": [
     {"name":"uHasLod","type":"int","count":1,"values":[0]},
@@ -17,6 +18,7 @@
     {"name":"sloAutoGas2","type":"float","count":4,"values":[0.0]},
     {"name":"sloTankGasScale","type":"float","count":4,"values":[0.0]},
     {"name":"sloBigGasScale","type":"float","count":4,"values":[0.0]},
+        { "name": "sloSmokePerformance", "type": "int", "count": 1, "values": [ 0 ] },
         { "name": "sloSmokeOptions", "type": "float", "count": 4, "values": [ 0, 0, 1, 1 ] },
         { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
         { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },

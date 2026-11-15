@@ -46,7 +46,7 @@ class LocaleTest {
             }
         }
         // Eight paths exist on both sides (disco.* and debug.effects); they share one path-keyed label.
-        org.junit.jupiter.api.Assertions.assertEquals(502, keys.size(), "unique catalogue paths");
+        org.junit.jupiter.api.Assertions.assertEquals(503, keys.size(), "unique catalogue paths");
         org.junit.jupiter.api.Assertions.assertTrue(missing.isEmpty(),
                 "missing Chinese labels (" + missing.size() + "):\n" + String.join("\n", missing));
     }

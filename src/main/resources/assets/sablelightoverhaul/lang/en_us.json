@@ -802,6 +802,8 @@
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.chargeExponent": "Propellant charge size curve exponent",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.chargeMaxScale": "Propellant charge size multiplier cap",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.flipbook": "Pre-baked smoke animation",
+  "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.performanceMode": "Smoke performance mode",
+  "sablelightoverhaul.text.7f45daa6e593986d": "Use a baked mask for edge erosion and cold smoke opacity detail in the thermal smoke material. Switch live to compare while preserving smoke count, motion and fade curves.",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.simpleLighting": "Simplified lighting",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.ambientGain": "Ambient base color multiplier",
   "sablelightoverhaul.config.key.particles.muzzle.tankCannon.smokeCached": "Pre-baked single-face tank smoke",

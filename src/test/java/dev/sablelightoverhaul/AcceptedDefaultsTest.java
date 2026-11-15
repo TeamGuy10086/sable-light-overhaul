@@ -42,6 +42,7 @@ class AcceptedDefaultsTest {
             expected.put("particles.muzzle.bigCannon.thermalSmoke.chargeMaxScale",6.0);
             // New 566 defaults; the accepted old snapshot remains unchanged.
             expected.put("particles.muzzle.bigCannon.thermalSmoke.flipbook",true);
+            expected.put("particles.muzzle.bigCannon.thermalSmoke.performanceMode",false);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.simpleLighting",true);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.ambientGain",1.0);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.emissionGain",128.0);

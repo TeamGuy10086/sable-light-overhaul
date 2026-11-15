@@ -84,6 +84,15 @@ vec4 slo_ribbon_sample(vec2 p) {
 // Linear DATA atlas, not a colour texture. Six 32-frame sequences; 128px cells + 2px gutter.
 uniform sampler2D sloSmokeAtlas;
 uniform sampler2D sloTankSmokeAtlas;
+uniform sampler2D sloSmokeMask;
+uniform int sloSmokePerformance;
+
+// Six seed-stable tiles. Sample between texel centers without crossing a tile boundary.
+vec2 slo_baked_smoke_mask(vec2 p, float id) {
+    vec2 pixel = clamp(p*.5+.5,0.0,1.0)*127.0+0.5;
+    pixel.y += mod(id,6.0)*128.0;
+    return texture(sloSmokeMask,pixel/vec2(128.0,768.0)).rg;
+}
 uniform vec4 sloSmokeOptions; // baked material, simple lighting, ambient gain, emission gain
 vec4 slo_smoke_flipbook(vec2 p,float encoded,vec4 tint) {
     float id=mod(-encoded-128.0,64.0),age=clamp(floor((-encoded-128.0)/64.0)/32.0,0.0,8.0);
@@ -130,25 +139,37 @@ vec4 slo_smoke_tinted(vec2 p,float seed,vec4 tint) {
     sloThermalCut=0.0;
     sloThermalLife=1.0;
     sloThermalIslands=1.0;
-    if(abs(seed)>=128.0 && tint.g>0.0) {
-        // A noisy contour retreats inward. Along each ray erosion always connects to the rim.
-        float id=mod(abs(seed)-128.0,64.0);
-        float radius=length(p);
-        vec2 direction=p/max(radius,0.001);
-        vec2 q=direction*1.65+vec2(id*1.37,id*2.71);
-        float shape=0.76*slo_smoke_noise(q)+0.24*slo_smoke_noise(q*3.7+12.4);
-        float progress=clamp(tint.g,0.0,1.0);
-        float edge=mix(0.94,0.43+0.16*shape,progress);
-        float erosion=smoothstep(edge,edge+0.10,radius);
-        sloThermalIslands=1.0-0.58*erosion;
-    }
-    // Blue carries inverse late-density detail normalized to 0..3 for thermal smoke.
-    if(abs(seed)>=128.0 && tint.b<0.998) {
-        float id=mod(abs(seed)-128.0,64.0);
-        vec2 q=p*7.0+vec2(id*3.71,id*1.37);
-        float density=0.75*slo_smoke_noise(q)+0.25*slo_smoke_noise(q*2.3+9.2);
-        float mottling=mix(0.42,1.0,smoothstep(0.23,0.75,density));
-        sloThermalIslands*=pow(mottling,3.0*(1.0-tint.b));
+    bool thermal=abs(seed)>=128.0;
+    bool erode=thermal && tint.g>0.0;
+    bool detail=thermal && tint.b<0.998;
+    float maskId=mod(abs(seed)-128.0,64.0);
+    if(sloSmokePerformance==1 && (erode || detail)) {
+        vec2 mask=slo_baked_smoke_mask(p,maskId);
+        if(erode) {
+            float edge=mix(0.94,0.43+0.16*mask.g,clamp(tint.g,0.0,1.0));
+            float erosion=smoothstep(edge,edge+0.10,length(p));
+            sloThermalIslands=1.0-0.58*erosion;
+        }
+        if(detail) sloThermalIslands*=pow(mix(0.42,1.0,mask.r),3.0*(1.0-tint.b));
+    } else {
+        if(erode) {
+            // A noisy contour retreats inward. Along each ray erosion always connects to the rim.
+            float radius=length(p);
+            vec2 direction=p/max(radius,0.001);
+            vec2 q=direction*1.65+vec2(maskId*1.37,maskId*2.71);
+            float shape=0.76*slo_smoke_noise(q)+0.24*slo_smoke_noise(q*3.7+12.4);
+            float progress=clamp(tint.g,0.0,1.0);
+            float edge=mix(0.94,0.43+0.16*shape,progress);
+            float erosion=smoothstep(edge,edge+0.10,radius);
+            sloThermalIslands=1.0-0.58*erosion;
+        }
+        // Blue carries inverse late-density detail normalized to 0..3 for thermal smoke.
+        if(detail) {
+            vec2 q=p*7.0+vec2(maskId*3.71,maskId*1.37);
+            float density=0.75*slo_smoke_noise(q)+0.25*slo_smoke_noise(q*2.3+9.2);
+            float mottling=mix(0.42,1.0,smoothstep(0.23,0.75,density));
+            sloThermalIslands*=pow(mottling,3.0*(1.0-tint.b));
+        }
     }
     if(seed<=-64.0 && seed>-128.0) return slo_tank_smoke_cached(p,seed,tint);
     if(seed > -128.0) {
