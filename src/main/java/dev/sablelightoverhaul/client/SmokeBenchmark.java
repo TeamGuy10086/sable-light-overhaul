@@ -18,10 +18,12 @@ import net.neoforged.neoforge.client.event.RenderFrameEvent;
 
 /** Measures frame-to-frame wall time with a fixed smoke fixture in material A/B or layer sweep mode. */
 final class SmokeBenchmark {
+    static final int SHOT_PUFFS = 32;
     private static final long SECOND = 1_000_000_000L;
     private static final long WARMUP = 2 * SECOND;
     private static final long SAMPLE_TIME = 5 * SECOND;
     private static final boolean[] AB_ORDER = {false, true, true, false};
+    private enum Fixture { MATERIAL, OVERLAP, SHOT }
     private record Phase(boolean baked, int layers) {}
     private static Run active;
 
@@ -32,7 +34,7 @@ final class SmokeBenchmark {
         final int count;
         final int visualEpoch;
         final long requestedAt = System.nanoTime();
-        final boolean layerSweep;
+        final Fixture fixture;
         final Phase[] phases;
         final long warmup;
         final long duration;
@@ -49,13 +51,14 @@ final class SmokeBenchmark {
         final BitSet draws = new BitSet();
         final int[] drawnSamples;
 
-        Run(Minecraft mc, int count, boolean layerSweep) {
+        Run(Minecraft mc, int maximum, Fixture fixture) {
             this.level = mc.level;
-            this.count = count;
-            this.layerSweep = layerSweep;
+            this.count = fixture == Fixture.SHOT ? SHOT_PUFFS : maximum;
+            this.fixture = fixture;
+            boolean layerSweep = fixture != Fixture.MATERIAL;
             warmup = layerSweep ? SECOND : WARMUP;
             duration = layerSweep ? 4 * SECOND : WARMUP + SAMPLE_TIME;
-            phases = new Phase[layerSweep ? count : AB_ORDER.length];
+            phases = new Phase[layerSweep ? maximum : AB_ORDER.length];
             boolean currentMode = BigSmokeConfig.PERFORMANCE.get();
             for (int i = 0; i < phases.length; i++) {
                 phases[i] = layerSweep ? new Phase(currentMode, i + 1) : new Phase(AB_ORDER[i], count);
@@ -64,8 +67,8 @@ final class SmokeBenchmark {
             lengths = new int[phases.length];
             drawnSamples = new int[phases.length];
             visualEpoch = ClientFlashes.visualEpoch();
-            settings = String.format(Locale.ROOT, "puffs=%d, backend=%s, render=%dx%d, vsync=%s, fpsLimit=%s",
-                count, ClientFlashes.effectiveMode(), mc.getWindow().getWidth(), mc.getWindow().getHeight(),
+            settings = String.format(Locale.ROOT, "puffs=%d, maxDrawn=%d, backend=%s, render=%dx%d, vsync=%s, fpsLimit=%s",
+                count, maximum, ClientFlashes.effectiveMode(), mc.getWindow().getWidth(), mc.getWindow().getHeight(),
                 mc.options.enableVsync().get(), mc.options.framerateLimit().get());
         }
     }
@@ -76,14 +79,18 @@ final class SmokeBenchmark {
     }
 
     static int start(int count) {
-        return start(count, false);
+        return start(count, Fixture.MATERIAL);
     }
 
     static int startLayers(int count) {
-        return start(count, true);
+        return start(count, Fixture.OVERLAP);
     }
 
-    private static int start(int count, boolean layerSweep) {
+    static int startShot(int maximum) {
+        return start(maximum, Fixture.SHOT);
+    }
+
+    private static int start(int count, Fixture fixture) {
         Minecraft mc = Minecraft.getInstance();
         if (active != null) {
             message(mc, "active");
@@ -98,15 +105,15 @@ final class SmokeBenchmark {
             message(mc, "trace");
             return 0;
         }
-        if (layerSweep && !BigSmokeParticle.singleQuad()) {
+        if (fixture != Fixture.MATERIAL && !BigSmokeParticle.singleQuad()) {
             message(mc, "needsSingleQuad");
             return 0;
         }
-        active = new Run(mc, count, layerSweep);
-        if (layerSweep) {
-            message(mc, "layersStart", count, count * 4);
-        } else {
-            message(mc, "start");
+        active = new Run(mc, count, fixture);
+        switch (fixture) {
+            case MATERIAL -> message(mc, "start");
+            case OVERLAP -> message(mc, "layersStart", count, count * 4);
+            case SHOT -> message(mc, "shotStart", count, count * 4);
         }
         return 1;
     }
@@ -144,7 +151,10 @@ final class SmokeBenchmark {
             run.eye = camera.getPosition();
             run.pitch = camera.getXRot();
             run.yaw = camera.getYRot();
-            run.particles = BigSmokeParticle.benchmarkPuffs(run.level, run.eye, Vec3.directionFromRotation(run.pitch, run.yaw), run.count, run.layerSweep);
+            Vec3 look = Vec3.directionFromRotation(run.pitch, run.yaw);
+            run.particles = run.fixture == Fixture.SHOT
+                ? BigSmokeParticle.benchmarkShot(run.level, run.eye, look, run.yaw)
+                : BigSmokeParticle.benchmarkPuffs(run.level, run.eye, look, run.count, run.fixture == Fixture.OVERLAP);
             run.phaseStart = now;
             return;
         }
@@ -162,7 +172,7 @@ final class SmokeBenchmark {
             }
             run.samples[run.phase][index] = now - run.lastFrame;
             run.lengths[run.phase]++;
-            int expectedDraws = run.layerSweep ? run.phases[run.phase].layers() : 1;
+            int expectedDraws = run.fixture == Fixture.MATERIAL ? 1 : run.phases[run.phase].layers();
             if (run.draws.cardinality() >= expectedDraws) run.drawnSamples[run.phase]++;
         }
         run.draws.clear();
@@ -206,13 +216,14 @@ final class SmokeBenchmark {
             }
         }
         var logger = com.mojang.logging.LogUtils.getLogger();
-        if (run.layerSweep) {
-            logger.info("SLO smoke layers {} | material={}", run.settings, modeName(run.phases[0]));
+        if (run.fixture != Fixture.MATERIAL) {
+            String name = run.fixture == Fixture.SHOT ? "shot" : "layers";
+            logger.info("SLO smoke {} {} | material={}", name, run.settings, modeName(run.phases[0]));
             for (int round = 0; round < run.phases.length; round++) {
-                logger.info("SLO smoke layers: {} | {}", run.phases[round].layers(), describeRound(run, round));
+                logger.info("SLO smoke {}: {} | {}", name, run.phases[round].layers(), describeRound(run, round));
             }
             int last = run.phases.length - 1;
-            message(mc, "layersResult", describeRound(run, 0), run.phases[last].layers(), describeRound(run, last));
+            message(mc, name + "Result", describeRound(run, 0), run.phases[last].layers(), describeRound(run, last));
         } else {
             String realtime = summarize(run, false);
             String baked = summarize(run, true);
@@ -223,7 +234,8 @@ final class SmokeBenchmark {
         try {
             Files.createDirectories(dir);
             String stamp = Instant.now().toString().replace(':', '-');
-            Path output = Files.createTempFile(dir, "slo-smoke-bench-" + stamp + "-", ".csv");
+            String prefix = run.fixture == Fixture.SHOT ? "slo-smoke-bench-shot-" : "slo-smoke-bench-";
+            Path output = Files.createTempFile(dir, prefix + stamp + "-", ".csv");
             Files.write(output, csv);
             message(mc, "saved", output.getFileName().toString());
         } catch (IOException error) {

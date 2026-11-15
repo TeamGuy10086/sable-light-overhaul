@@ -39,15 +39,18 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  /** Each emission batch evicts the oldest cannon lobes to fit its own budget. */
  public static void emit(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int tick,int total,int release,float power){
   if(!available())return;
+  emit(level,origin,direction,group,tick,total,release,cannonAppearance(power));
+ }
+
+ private static Appearance cannonAppearance(float power){
   double charge=BigSmokeModel.chargeScale(power,BigSmokeConfig.CHARGE_REFERENCE.get(),BigSmokeConfig.CHARGE_EXPONENT.get(),BigSmokeConfig.CHARGE_MAX.get());
   double scale=BigSmokeConfig.SCALE.get()*charge,base=BigSmokeConfig.DIAMETER.get()*scale*.5;
   double flashWidth=MuzzleClientConfig.BIG_FIREBALL_ENABLED.get()?FireballParticle.bigWidth(charge):base;
-  var appearance=new Appearance(BigSmokeConfig.LENGTH.get()*scale,BigSmokeModel.linkedRadius(base,flashWidth,BigSmokeConfig.FLASH_LINK.get()),
+  return new Appearance(BigSmokeConfig.LENGTH.get()*scale,BigSmokeModel.linkedRadius(base,flashWidth,BigSmokeConfig.FLASH_LINK.get()),
       BigSmokeConfig.LIFE.get(),BigSmokeConfig.HOT_TICKS.get(),BigSmokeConfig.ROOT_HOT_SCALE.get(),BigSmokeConfig.TIP_HOT_SCALE.get(),
       BigSmokeConfig.OPACITY.get()*ExtraConfig.BIG_PLUME_ALPHA.get(),BigSmokeConfig.RISE.get(),BigSmokeConfig.SPREAD.get(),
       BigSmokeConfig.EXPANSION.get(),BigSmokeConfig.FADE_FROM.get(),BigSmokeConfig.COLD_FRACTION.get(),BigSmokeConfig.COLD_SIZE.get(),
       BigSmokeConfig.CURL.get(),BigSmokeConfig.DENSITY_DETAIL.get(),true);
-  emit(level,origin,direction,group,tick,total,release,appearance);
  }
  static void emit(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int tick,int total,int release,Appearance appearance){
   if(!available())return;
@@ -60,16 +63,25 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
    var oldest=live.removeFirst().particle().get();
    if(oldest!=null)oldest.remove();
   }
-  int start=(int)(((long)tick*total+release-1)/release);
+  int start=firstPuff(tick,total,release);
   for(int i=0;i<count;i++){
    var p=new BigSmokeParticle(level,origin,direction,group,start+i,tick,appearance);
    live.add(new Live(new java.lang.ref.WeakReference<>(p),now+p.lifetime+2));
    Minecraft.getInstance().particleEngine.add(p);
   }
  }
+ private static int firstPuff(int tick,int total,int release){
+  return (int)(((long)tick*total+release-1)/release);
+ }
  private static boolean dead(Live e){var p=e.particle.get();return p==null||p.removed;}
  private BigSmokeParticle(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int index,int birthTick,Appearance appearance){
+  this(level,origin,direction,group,index,birthTick,appearance,false);
+ }
+
+ private BigSmokeParticle(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int index,int birthTick,
+                          Appearance appearance,boolean fixedSeed){
   super(level,origin.x,origin.y,origin.z);
+  if(fixedSeed)random.setSeed(0x534c4fL+index*31L);
   this.origin=origin;axis=direction.normalize();this.birthTick=birthTick;
   double fraction=BigSmokeModel.station(index);
   cold=dev.sablelightoverhaul.BigSmokeBirthModel.isCold(index,appearance.coldFraction());
@@ -108,15 +120,43 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
    }else{
     puff.positionAt(puff.age/20.0);
    }
-   puff.xo=puff.x;puff.yo=puff.y;puff.zo=puff.z;
-   puff.quadSize=puff.getQuadSize(0);
-   double size=puff.quadSize;
-   puff.setBoundingBox(new AABB(puff.x-size,puff.y-size,puff.z-size,puff.x+size,puff.y+size,puff.z+size));
-   puff.alpha=puff.coverage(0);
-   result.add(puff);
-   Minecraft.getInstance().particleEngine.add(puff);
+   addFrozenPuff(result,puff);
   }
   return result;
+ }
+
+ /** Rebuild one 8-charge shot using its normal birth batches, then freeze its cold stage. */
+ static List<BigSmokeParticle> benchmarkShot(ClientLevel level,Vec3 eye,Vec3 look,float yaw){
+  int total=SmokeBenchmark.SHOT_PUFFS;
+  int release=BigSmokeConfig.RELEASE_TICKS.get();
+  Appearance appearance=cannonAppearance(8);
+  Vec3 origin=eye.add(look.scale(10));
+  Vec3 side=Vec3.directionFromRotation(0,yaw+90);
+  Vec3 direction=look.add(side.scale(.35)).normalize();
+  int shotTick=Math.round(appearance.life()*.70f);
+  var result=new ArrayList<BigSmokeParticle>(total);
+  for(int batch=0;batch<release;batch++){
+   int start=firstPuff(batch,total,release);
+   int end=start+BigSmokeModel.children(total,release,batch);
+   for(int index=start;index<end;index++){
+    var puff=new BigSmokeParticle(level,origin,direction,null,index,batch,appearance,true);
+    puff.benchmarkIndex=index;
+    puff.age=Math.clamp(shotTick-batch,0,puff.lifetime-1);
+    puff.positionAt((puff.age+batch)/20.0);
+    addFrozenPuff(result,puff);
+   }
+  }
+  return result;
+ }
+
+ private static void addFrozenPuff(List<BigSmokeParticle> result,BigSmokeParticle puff){
+  puff.xo=puff.x;puff.yo=puff.y;puff.zo=puff.z;
+  puff.quadSize=puff.getQuadSize(0);
+  double size=puff.quadSize;
+  puff.setBoundingBox(new AABB(puff.x-size,puff.y-size,puff.z-size,puff.x+size,puff.y+size,puff.z+size));
+  puff.alpha=puff.coverage(0);
+  result.add(puff);
+  Minecraft.getInstance().particleEngine.add(puff);
  }
  private int benchmarkIndex=-1;
  private float benchmarkSize;

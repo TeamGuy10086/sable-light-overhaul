@@ -68,6 +68,11 @@ public final class SmokeDebugCommand {
         root.then(Commands.literal("bench")
             .executes(context -> SmokeBenchmark.start(32))
             .then(Commands.literal("stop").executes(context -> SmokeBenchmark.stop()))
+            .then(Commands.literal("shot")
+                .executes(context -> SmokeBenchmark.startShot(SmokeBenchmark.SHOT_PUFFS))
+                .then(Commands.argument("maximum", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, SmokeBenchmark.SHOT_PUFFS))
+                    .executes(context -> SmokeBenchmark.startShot(
+                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "maximum")))))
             .then(Commands.literal("layers")
                 .then(Commands.argument("maximum", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 64))
                     .executes(context -> SmokeBenchmark.startLayers(

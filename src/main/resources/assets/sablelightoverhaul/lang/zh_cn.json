@@ -1,5 +1,7 @@
 {
   "sablelightoverhaul.smokeBench.needsSingleQuad": "叠层测试要求每朵烟只画一个面。请先开启大炮预烘焙烟雾动画。",
+  "sablelightoverhaul.smokeBench.shotStart": "8 药近景炮口烟测试。从 1 朵逐一测到 %s 朵，约 %s 秒。请在开阔处保持位置和视角固定。",
+  "sablelightoverhaul.smokeBench.shotResult": "1 朵 %s | %s 朵 %s。逐朵统计见 latest.log。",
   "sablelightoverhaul.smokeBench.layersStart": "从 1 层逐一测到 %s 层，约 %s 秒。请朝向开阔处，保持位置和视角固定，关闭垂直同步并提高帧率上限。",
   "sablelightoverhaul.smokeBench.layersResult": "1 层 %s | %s 层 %s。逐层统计见 latest.log。",
   "sablelightoverhaul.smokeBench.active": "已有烟雾测试在运行。可用 /slosmoke bench stop 停止。",
