@@ -2,33 +2,35 @@ modLoader="javafml"
 loaderVersion="[4,)"
 license="MIT"
 [[mods]]
-modId="cbcmuzzlelight"
+modId="sablelightoverhaul"
 version="${version}"
 displayName="Sable Light Overhaul (Experimental)"
-description='''Native big-cannon plume lighting and directional autocannon muzzle flame for CBC 5.11.7. Mortars excluded. No shader-pack edits required for the base effect; runtime validation pending.'''
+description='''Dynamic cannon lighting, particles, configurable lamps and shader-pack lighting for Minecraft 1.21.1. Advanced mode requires a matching shader patch. Experimental; runtime validation pending.'''
 [[mixins]]
-config="cbcmuzzlelight.mixins.json"
+config="sablelightoverhaul.mixins.json"
 [[mixins]]
-config="cbcmuzzlelight.cbcat.mixins.json"
-[[dependencies.cbcmuzzlelight]]
+config="sablelightoverhaul.cbcat.mixins.json"
+[[mixins]]
+config="sablelightoverhaul.cbc.mixins.json"
+[[dependencies.sablelightoverhaul]]
 modId="neoforge"
 type="required"
 versionRange="[21.1.228,)"
 ordering="NONE"
 side="BOTH"
-[[dependencies.cbcmuzzlelight]]
+[[dependencies.sablelightoverhaul]]
 modId="minecraft"
 type="required"
 versionRange="[1.21.1]"
 ordering="NONE"
 side="BOTH"
-[[dependencies.cbcmuzzlelight]]
+[[dependencies.sablelightoverhaul]]
 modId="createbigcannons"
 type="required"
 versionRange="[5.11.7]"
 ordering="AFTER"
 side="BOTH"
-[[dependencies.cbcmuzzlelight]]
+[[dependencies.sablelightoverhaul]]
 modId="ldlib2"
 type="optional"
 versionRange="[2.2.17,)"
@@ -36,13 +38,11 @@ ordering="AFTER"
 side="BOTH"
 
 [[mixins]]
-config="cbcmuzzlelight.advanced.mixins.json"
+config="sablelightoverhaul.iris.mixins.json"
+[[mixins]]
+config="sablelightoverhaul.sable.mixins.json"
+[[mixins]]
+config="sablelightoverhaul.server.mixins.json"
 
 [[mixins]]
-config="cbcmuzzlelight.iris.mixins.json"
-
-[[mixins]]
-config="cbcmuzzlelight.cbcmodernwarfare.mixins.json"
-
-[modproperties.cbcmuzzlelight."yumi:entrypoints"]
-"lambdynlights:initializer" = "dev.cbcmuzzlelight.client.LambInitializer"
+config="sablelightoverhaul.cbcmodernwarfare.mixins.json"

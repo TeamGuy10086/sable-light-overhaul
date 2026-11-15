@@ -1,0 +1,34 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.sablelightoverhaul.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BigCannonMixin",
+    "AutocannonMixin",
+    "FarEntityTrackingMixin"
+  ],
+  "client": [
+    "HealthbarNavalPlaceholderMixin",
+    "NavalAudioDuckingMixin",
+    "NativeVoxyDepthMixin",
+    "LightEngineAccessor",
+    "BlockLightMixin",
+    "BigPlumeMixin",
+    "AutocannonPlumeSuppressMixin",
+    "AutocannonTrailMixin",
+    "BigCannonTrailMixin",
+    "CannonSmokeMixin",
+    "MuzzleFallbackSmokeMixin",
+    "ParticleDepthSortMixin",
+    "ParticlePositionAccessor",
+    "ParticleEngineAccessor",
+    "ParticleLifetimeAccessor",
+    "BlockHitEffectMixin",
+    "FieldBlockChangeMixin",
+    "FieldChunkDataMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

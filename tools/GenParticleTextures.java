@@ -4,7 +4,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 /**
- * Draws the cloud sprites for cbcmuzzlelight:puff.
+ * Draws the cloud sprites for sablelightoverhaul:puff.
  *
  * <p>Not shipped in the jar: run it with {@code java tools/GenParticleTextures.java <outputDirectory>}
  * to regenerate them. The shapes are a sum of a few soft blobs, which is what makes a puff read as

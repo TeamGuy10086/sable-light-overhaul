@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "visible=true": {
+      "model": "sablelightoverhaul:block/vortex_generator"
+    },
+    "visible=false": {
+      "model": "sablelightoverhaul:block/vortex_generator"
+    }
+  }
+}

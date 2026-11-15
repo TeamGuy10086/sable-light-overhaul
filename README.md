@@ -1,89 +1,71 @@
 # Sable Light Overhaul
 
-给 **Create: Big Cannons** 及其附属的动态光照、粒子与阴影。前身叫 *CBC Muzzle Light*。
+**English** | [简体中文](README.zh-CN.md)
 
-> **实验性。** 当前 `0.1.0`。测试期只递增第三位（`0.1.1`、`0.1.2` …），
-> **在明确设基线并 release 之前不会升到 `0.2`**。绝大多数功能**尚未实机验收** ——
-> 状态与待测清单见 [`HANDOFF.zh-CN.md`](HANDOFF.zh-CN.md) §9。
+Lighting, cannon effects and distant rendering for Create: Big Cannons on Minecraft 1.21.1 / NeoForge.
 
-## 做什么
+SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights, with dedicated shader adapters and a shader-free lighting backend. Configure effects, devices and budgets through **F9**. Interface labels, item names and descriptions support English and Simplified Chinese.
 
-重点是让炮火、射灯和随身光源**真正参与光影包自己的光照阶段**，而不是浮在画面上的一层叠加。
+**Current release line: 0.3.2 · internal mod version: 0.1.638.** Release filenames and Minecraft's internal version can differ intentionally.
 
-- 炮口闪光 / 曳光弹的**动态光照**与**尾迹**
-- 爆炸：闪光 + 冲击波（服务端测量 → 客户端绘制）
-- 射灯、随身手电筒（含 48 格内**他人手电筒**同步）、登记式静态光源
-- AP 弹命中与跳弹火花、扬尘、迪斯科灯球
-- **阴影**：屏幕空间射线；名额按「灯的衰减球 ∩ 视野锥」分配（不是按距离），
-  软/硬边与采样次数**每盏灯可配**，且客户端有最终否决权
-- 计划中：翼面涡流
+## Features
 
-## 四档光照模式（客户端 `lightingMode`）
+- **Cannon smoke and dust:** hot and cold smoke layers, gradual expansion and edge erosion, charge-scaled big-cannon smoke, tank muzzle smoke and ground dust, and lightweight autocannon muzzle effects. Separate configurable smoke budgets evict the oldest effects when full.
+- **Tracers and explosions:** short luminous projectile trails with distant rendering, scene/cloud/smoke occlusion in supported pipelines, impact termination and network smoothing; custom flak smoke, sparks and shockwaves.
+- **Illumination and signal shells:** CBC shells with illumination flares, RGB signal flares and an altitude fuze. Burning lifetime and brightness can be stored per shell; flares descend slowly and remain visible at long range.
+- **Lighting devices:** articulated spotlights, flashlights and hidden point lights, with configurable beam, glow and offsets. Ships use ship-relative transforms where supported.
+- **Sable Hostile integration:** per-turret effect controls, distant projectiles and tracers, cannon audio and turret rotation sounds. Compatible Sable Healthbar versions enable mathematical trajectory integration and native-entity handoff.
+- **Distant entity markers:** dedicated-server entities beyond client view distance can appear as occluded colored bounds, names or available portraits, with optional health display. Range is bounded by server view distance and the configured request range; this does not load extra terrain or provide full entity simulation.
+- **Global wind:** fixed or slowly varying wind drives effects that support the wind field.
 
-| 档位 | 实现 | 需要光影补丁 | 网格重建 |
-|---|---|---|---|
-| `Legacy` | 原版方块光传播 | ❌ | 有 |
-| `Compatible` | Lamb 区域光 | ❌ | 有 |
-| `DynamicOnly` | 屏幕空间叠加，任意光影通用 | ❌ | 无 |
-| `Advanced` | 注入光影包的光照阶段，**出颜色、有阴影** | ✅ | 无 |
+## Requirements and installation
 
-`Advanced` 档要求光影包带上补丁，见 [`patch/README.zh-CN.md`](patch/README.zh-CN.md)。
-**`Advanced` 但补丁没装 = 完全不发光**，请退回 `DynamicOnly`。
+- Minecraft **1.21.1**, Java **21**, NeoForge **21.1.228 or newer**, and Create: Big Cannons **5.11.7** with its required dependencies.
+- Install **LDLib2 2.2.17 or newer** for the F9 configuration interface. Integrations such as Voxy, Iris, Sable Hostile and Sable Healthbar require compatible versions; they are not bundled.
+- Install the SLO JAR in `mods`, replacing the older SLO JAR. Do not keep multiple versions together.
+- For server-synchronized features, install a matching SLO version and required dependencies on the dedicated server and clients.
+- Select the appropriate lighting backend in **F9 → Lights → Lighting backend**.
 
-## 构建
+| Backend | Intended use |
+| --- | --- |
+| **SLO Only** | No shader pack. SLO lighting/effects and supported Voxy distant lighting/occlusion. Volumetric beams are disabled; refraction defaults off. Surface lighting is an approximation, not a reconstruction of vanilla's lightmap. |
+| **Screen-space approximation** | Approximate lighting fallback, including shader packs without a dedicated SLO adapter. Compatibility and occlusion quality depend on the active pipeline. |
+| **Advanced** | A supported shader pack with its matching SLO patch. |
+| **Off** | Disable the lighting backend for troubleshooting. |
 
-> **前提：本仓库不含任何第三方 jar。** `.gitignore` 忽略 `libs/**/*.jar`，所以
-> **克隆下来不能直接构建** —— 先把依赖从游戏实例里抽出来。
+## Shader compatibility
 
-```powershell
-# 1) 从游戏实例的 mods\ 抽依赖 jar（只需一次；依赖版本变化时重跑）
-#    它逐个校验 SHA-256 并与被检视过的那几份构建比对，对不上会直接报错
-.\prepare-libs.ps1 -CbcJar       '<实例>\mods\createbigcannons-...jar' `
-                   -SableJar     '<实例>\mods\sable-neoforge-...jar' `
-                   -LambJar      '<实例>\mods\lambdynamiclights-...jar' `
-                   -CreateJar    '<实例>\mods\create-...jar' `
-                   -YuushyaJar   '<实例>\mods\yuushya-...jar' `
-                   -CopycatsJar  '<实例>\mods\copycats-...jar' `
-                   -CopyfoxiesJar '<实例>\mods\copyfoxies-...jar'
-                   # -CbcatJar 可选
+Download originals from their authors, then use the matching **Windows x64 offline patcher** from the [releases](https://github.com/TeamGuy10086/sable-light-overhaul/releases). SLO does not distribute complete shader packs.
 
-# 2) 构建：Java 21 / NeoForge 21.1.228 / Minecraft 1.21.1
-.\gradlew.bat build      # → build/libs/sable-light-overhaul-<version>.jar
-.\gradlew.bat test       # 133 个测试
-```
+| Patcher | Supported original |
+| --- | --- |
+| Photon | [voxy-support snapshot `ba11ae2`](https://github.com/sixthsurge/photon/archive/ba11ae2ad9d506c3a2fd9ca10c317be259b94d69.zip), by [SixthSurge](https://modrinth.com/shader/photon-shader) |
+| Complementary | [Unbound r5.8.1](https://www.complementary.dev/shaders/), optionally with [Euphoria Patches 1.9.3](https://www.euphoriapatches.com/) installed by its own installer |
+| Mellow | [v3.5](https://modrinth.com/shader/mellow/version/3.5), by TheCMK |
 
-> **已知限制**：`prepare-libs.ps1` 要你手动传 8 个 jar 路径，且**逐个比对 SHA-256**，
-> 所以这份代码实际上**只能在那台装了特定整合包的机器上构建**。
-> 让它像 `patch/deploy-to-instance.ps1` 那样自动探测实例，是待办项。
+Select an original ZIP or extracted directory and a new output ZIP. The patcher checks source fingerprints, rejects unsupported or modified inputs, and verifies the result. Renaming a different version will not bypass validation. The input and existing outputs are never overwritten. See the [patcher guide](tools/patcher/README.md) for CLI use and rebuilding.
 
-## 部署到游戏实例
+Select the generated pack in Iris and use **Advanced**. A successful patch validates files, not GPU compilation. These adapters are not official upstream releases. Mellow's SLO light shadows default off because of remaining artifacts. Photon and Complementary have separate tuning; settings are not assumed interchangeable.
+
+## Building
+
+Use Java 21 and the Gradle wrapper. Third-party mod binaries are not included. Supply the compile/test dependencies described in [libs/README.txt](libs/README.txt); optional integration contracts are also checked by the test suite.
+
+Some shader contract tests need a local original Photon snapshot and its generated patched files. Prepare these without committing upstream sources:
 
 ```powershell
-& .\patch\deploy-to-instance.ps1 -Check                             # 只看不改，退出码 0 = 一致
-& .\patch\deploy-to-instance.ps1 -Instance '<版本目录>'              # 真正部署
+python tools/prepare-shader-tests.py path/to/photon-original.zip
+./gradlew.bat test jar
 ```
 
-它把 jar 与光影补丁都对齐到仓库产物，并**清掉旧档名的 jar** —— 同 mod id 留两份，游戏起不来。
+On Windows, `build` can also deploy to a local test instance **only when explicitly configured** with `SLO_INSTANCE` or an ignored `local-deploy.json` containing an `instance` path. It skips deployment while Minecraft is running. The repository does not include an author's instance configuration.
 
-> **改了 GLSL 必须让 Iris 重新加载光影包**（在列表里重选该包，或重启游戏）。
-> **F3+R 不重载 shader。**
+Internal investigation notes, deployment records, original shader archives and generated complete packs are maintained locally and excluded from this repository.
 
-## 文档
+## Bug reports
 
-| 文件 | 内容 |
-|---|---|
-| **[`HANDOFF.zh-CN.md`](HANDOFF.zh-CN.md)** | **主文档，读这一份就够**：架构、第三方 API 逆向事实卡、配置地图、诊断日志、踩过的坑、待办队列 |
-| [`patch/README.zh-CN.md`](patch/README.zh-CN.md) | Photon 光影补丁：安装、uniform 协议、阴影参数、局限 |
-| `RELEASE-*` / `*-PLAN` / `GPU-VERIFY` / `SPOTLIGHT-*` 等 | **历史文档**，可能已过时，保留作记录 |
+Use [GitHub Issues](https://github.com/TeamGuy10086/sable-light-overhaul/issues). Include SLO's internal version, Minecraft/NeoForge/Iris/Voxy versions, shader name and exact version, lighting backend, reproduction steps, and relevant logs or screenshots. State whether it reproduces without shaders and in single-player or on a dedicated server. Remove credentials and private server addresses from logs before posting.
 
-## 命名
+## License and credits
 
-项目叫 **`sable-light-overhaul`**，但 **mod id 仍是 `cbcmuzzlelight`**
-（Java 包 `dev.cbcmuzzlelight`、资源命名空间、配置文件 `cbcmuzzlelight-*.toml`、`SavedData` 键同理）。
-
-这是**故意的**：改它们会让现有存档里的方块与物品全部失效。计划在设基线时统一改名，
-并附带配置与存档数据的迁移。
-
-## 许可
-
-MIT，见 [`LICENSE`](LICENSE)。
+SLO's original mod and patcher code use the [MIT License](LICENSE). Third-party shader code, derived patches and runtime components retain their own licenses; see [patcher license notices](tools/patcher/licenses). Shader downloads belong to their original authors. A patcher does not grant permission to redistribute complete modified packs.

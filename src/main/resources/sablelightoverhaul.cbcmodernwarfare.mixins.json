@@ -1,0 +1,10 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.sablelightoverhaul.mixin",
+  "plugin": "dev.sablelightoverhaul.mixin.CbcModernWarfareMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["MediumCannonMixin", "MediumcannonBreechMixin"],
+  "client": ["TankCannonTrailMixin"],
+  "injectors": {"defaultRequire": 1}
+}

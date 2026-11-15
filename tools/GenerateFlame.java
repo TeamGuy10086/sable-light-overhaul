@@ -25,7 +25,7 @@ class GenerateFlame {
             int a=(int)Math.round(alpha*255), r=255, g=(int)(95+160*heat), b=(int)(8+225*heat*heat);
             image.setRGB(x,y,(a<<24)|(r<<16)|(g<<8)|b);
         }
-        Path output=Path.of("src/main/resources/assets/cbcmuzzlelight/textures/particle/auto_muzzle.png");
+        Path output=Path.of("src/main/resources/assets/sablelightoverhaul/textures/particle/auto_muzzle.png");
         Files.createDirectories(output.getParent());
         ImageIO.write(image,"png",output.toFile());
     }

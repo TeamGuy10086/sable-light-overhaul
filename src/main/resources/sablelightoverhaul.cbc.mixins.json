@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.sablelightoverhaul.mixin",
+  "plugin": "dev.sablelightoverhaul.mixin.CbcMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "CbcExplosionRangeMixin",
+    "FlakConeMixin",
+    "CbcArmorRegistryAccess",
+    "NavalImpactAudioMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  },
+  "client": [
+    "FlakCloudBudgetMixin",
+    "ManagedAutocannonRenderMixin",
+    "NavalTracerGlowMixin"
+  ]
+}

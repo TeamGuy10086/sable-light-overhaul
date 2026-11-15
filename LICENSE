@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 CBC Muzzle Light contributors
+Copyright (c) 2026 Sable Light Overhaul contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,6 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+This license covers the original Sable Light Overhaul mod and shader patcher
+code. Third-party shader code and patch content derived from it retain their
+upstream licenses; this license does not relicense those components.
 
 The Gradle wrapper files originate from the NeoForge MDK / Gradle and retain
 their original notices (Apache License 2.0). Minecraft, NeoForge, CBC and Iris

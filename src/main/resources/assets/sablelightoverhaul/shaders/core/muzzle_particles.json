@@ -1,0 +1,29 @@
+{
+    "vertex": "sablelightoverhaul:muzzle_particles",
+    "fragment": "sablelightoverhaul:muzzle_particles",
+    "samplers": [
+        {"name":"LodDepthSampler"},
+        { "name": "Sampler0" },
+        { "name": "Sampler2" },
+        { "name": "sloSmokeAtlas" },
+        { "name": "sloTankSmokeAtlas" }
+    ],
+    "uniforms": [
+    {"name":"uHasLod","type":"int","count":1,"values":[0]},
+    {"name":"uLodZeroToOne","type":"int","count":1,"values":[0]},
+    {"name":"uInvLodViewProj","type":"matrix4x4","count":16,"values":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]},
+    {"name":"sloNativeScreenSize","type":"float","count":2,"values":[1.0]},
+    {"name":"sloAutoGas","type":"float","count":4,"values":[0.0]},
+    {"name":"sloAutoGas2","type":"float","count":4,"values":[0.0]},
+    {"name":"sloTankGasScale","type":"float","count":4,"values":[0.0]},
+    {"name":"sloBigGasScale","type":"float","count":4,"values":[0.0]},
+        { "name": "sloSmokeOptions", "type": "float", "count": 4, "values": [ 0, 0, 1, 1 ] },
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ColorModulator", "type": "float", "count": 4, "values": [ 1.0, 1.0, 1.0, 1.0 ] },
+        { "name": "FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "FogShape", "type": "int", "count": 1, "values": [ 0 ] }
+    ]
+}

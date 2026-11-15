@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "visible=true": {
+      "model": "sablelightoverhaul:block/spotlight_base"
+    },
+    "visible=false": {
+      "model": "sablelightoverhaul:block/spotlight_base"
+    }
+  }
+}

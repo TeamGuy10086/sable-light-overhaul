@@ -1,0 +1,349 @@
+[lighting]
+	mode = "Advanced"
+	inPackScale = 2.0
+	screenScale = 1.0
+	shaderScale = 1.0
+	falloffPower = 1.0
+	normalInfluence = 1.0
+	tiled = true
+	shipPosePhase = 0.0
+	[lighting.color]
+		red = 1.0
+		green = 0.58
+		blue = 0.25
+[particles]
+	trackedPerShot = 3
+	hotLifetimeFraction = 0.6
+	depthSort = true
+	sortMaxCount = 8192
+	sortMaxShifts = 8
+	sortDebug = false
+	occlusionEnabled = false
+	occlusionBudget = 2048
+	occlusionHoldTicks = 10
+	occlusionCoarseStep = 8
+	occlusionRefineLookback = 1
+	occlusionMarginBlocks = 4.0
+	occlusionHysteresis = 2
+	occlusionCellDegrees = 1.0
+	occlusionPrecast = 128
+	occlusionHorizonTicks = 5
+	[particles.muzzle]
+		flameRenderer = "VOLUME"
+		[particles.muzzle.autocannon]
+			lightDurationTicks = 5
+			lightSourceCount = 5
+			lightLength = 3.0
+			lightWidth = 1.44
+			tracerTrailStart = 8.96
+			[particles.muzzle.autocannon.flame]
+				sizeMultiplier = 4.7700000000000005
+				flameLengthScale = 0.7685
+				flameWidthScale = 1.2325
+				flameOpacity = 0.7155000000000001
+				flameDurationTicks = 3
+				lobeCount = 4
+				lobeStrength = 1.0
+				lobeTwist = 3.0
+				lobeLengthSpread = 0.525
+				lobeSharpness = 1.275
+				coreFocus = 0.735
+				edgeSoftness = 0.495
+		[particles.muzzle.bigCannon]
+			durationTicks = 30
+			peakHoldTicks = 2
+			minimumBrightness = 0.1
+			decayPerTick = 0.02
+			lightSourceCount = 7
+			lightLength = 6.0
+			lightWidth = 6.0
+			fallbackSpeed = 0.9
+			[particles.muzzle.bigCannon.fireball]
+				enabled = true
+				lifetimeTicks = 0
+				length = 6.0
+				coneAngle = 30.0
+				alpha = 0.65
+				scale = 1.5
+				coreScale = 1.0
+				gasScale = 1.0
+				jetScale = 1.0
+		[particles.muzzle.tankCannon]
+			smokeStyle = "NATIVE"
+			flameScale = 3.0020000000000002
+			coreScale = 0.9945
+			gasScale = 1.0
+			jetScale = 0.7995
+			smokeScale = 1.0
+			flameDurationTicks = 4
+			smokeSize = 5.0
+			tracerTrailStart = 17.92
+			[particles.muzzle.tankCannon.cloud]
+				forward = 12.0
+				spread = 4.96
+				growth = 1.2
+				brake = 0.13
+				lifetime = 40
+				fadeStart = 0.0
+				fadeRate = 1.005
+				fadeCurve = 0.50625
+				lifetimeJitter = 0.35
+			[particles.muzzle.tankCannon.afterSmoke]
+				enabled = true
+				delaySeconds = 0.65
+				durationSeconds = 1.0465
+				lifetimeSeconds = 2.985
+				birthDiameter = 1.9975
+				endDiameter = 5.9925
+				exitSpeed = 6.08
+				riseSpeed = 1.02
+				motionInheritance = 0.5
+				curl = 0.7
+				opacity = 0.55
+				forwardOffset = 0.15
+	[particles.groundDust]
+		frames = []
+		frameTicks = 4
+		rotation = 90.0
+		fieldDebug = false
+		fieldLimit = 4
+	[particles.hullDust]
+		queryBudget = 1024
+		skinThickness = 0.2
+		renderer = "SOFT_CLUSTER"
+		visualSurface = true
+		visualReach = 0.75
+		clusterThickness = 0.3
+[budgets]
+	areaLights = 32
+	receiverAreas = 64
+	receivers = 96
+	cpuLightSources = 256
+	additionalReceivers = 4096
+	heldLights = 8
+	peerLights = 8
+	reselectTicks = 5
+[staticSources]
+	sableBridge = true
+	selfLightingCull = true
+	takeOverVanilla = true
+	maximum = 32
+	activationDistance = 512.0
+	radiusAtLevel15 = 15.0
+[debug]
+	legacySable = false
+	lighting = false
+	effects = false
+	trails = false
+	shockwave = false
+	subLevelFar = false
+		[lightProfile.autocannon.shape]
+			forwardRange = 32.0
+			rearRange = 16.0
+			sideRange = 16.0
+			verticalRange = 16.0
+			rearClipDistance = 12.0
+		[lightProfile.autocannon.spatial]
+			coreFraction = 0.25
+			middleFraction = 0.55
+			tailBrightness = 0.2
+		[lightProfile.autocannon.time]
+			durationTicks = 5
+			peakHoldTicks = 1
+			minimumBrightness = 0.0
+			decayPerTick = 0.5
+		[lightProfile.autocannon.scaling]
+			referenceSize = 1.0
+			maximumRange = 32.0
+		[lightProfile.bigCannon.blast]
+			rangeMultiplier = 0.9875
+			intensityMultiplier = 1.0
+			[lightProfile.bigCannon.blast.shape]
+				forwardRange = 32.1265
+				rearRange = 32.1265
+				sideRange = 23.975
+				verticalRange = 16.0
+				rearClipDistance = 32.0
+			[lightProfile.bigCannon.blast.spatial]
+				coreFraction = 0.099
+				middleFraction = 0.55
+				tailBrightness = 0.2
+			[lightProfile.bigCannon.blast.time]
+				durationTicks = 4
+				peakHoldTicks = 2
+				minimumBrightness = 0.0
+				decayPerTick = 0.02
+			[lightProfile.bigCannon.blast.scaling]
+				referenceSize = 1.0
+				maximumRange = 64.0
+			[lightProfile.bigCannon.smoke.shape]
+				forwardRange = 32.0
+				rearRange = 32.1265
+				sideRange = 23.975
+				verticalRange = 95.9
+				rearClipDistance = 32.0
+			[lightProfile.bigCannon.smoke.spatial]
+				coreFraction = 0.099
+				middleFraction = 0.55
+				tailBrightness = 0.2
+			[lightProfile.bigCannon.smoke.time]
+				durationTicks = 48
+				peakHoldTicks = 5
+				minimumBrightness = 0.0
+				decayPerTick = 0.02
+			[lightProfile.bigCannon.smoke.scaling]
+				referenceSize = 1.0
+				maximumRange = 64.0
+			[lightProfile.bigCannon.tankCannon.shape]
+				forwardRange = 48.0
+				rearRange = 32.0
+				sideRange = 24.0
+				verticalRange = 24.0
+				rearClipDistance = 32.0
+			[lightProfile.bigCannon.tankCannon.spatial]
+				coreFraction = 0.25
+				middleFraction = 0.55
+				tailBrightness = 0.2
+			[lightProfile.bigCannon.tankCannon.time]
+				durationTicks = 4
+				peakHoldTicks = 2
+				minimumBrightness = 0.0
+				decayPerTick = 0.02
+			[lightProfile.bigCannon.tankCannon.scaling]
+				referenceSize = 1.0
+				maximumRange = 64.0
+[haze]
+	vehicleHazeMax = 128
+	muzzleHazeLocalMax = 8
+	muzzleHazeLocalRadius = 5.052499999999999
+[apSparks]
+	streakWidth = 0.3
+	chipWidth = 0.1
+	enabled = true
+	color = 16760944
+	bounce = 0.3
+	[apSparks.hit]
+		count = 10
+		speed = 3.5
+		spread = 0.45
+		size = 0.12
+		lifetime = 12.0
+	[apSparks.ricochet]
+		count = 32
+		chips = 6
+		speed = 5.0
+		spread = 0.8
+		size = 0.18
+		lifetime = 20.0
+	[apSparks.bigShells]
+		names = ["ap_shell", "ap_shot", "ap_medium", "apds_medium", "apfsds_medium", "aphe_medium"]
+		countScale = 1.8
+		sizeScale = 1.6
+[shadows]
+	count = 64
+	countAuto = false
+	steps = 12
+	qualitySteps = false
+	stepSize = 0.1
+	qualityThickness = 0.5
+	softness = 0.02
+	longRange = true
+	muzzleSoft = false
+	[shadows.classes]
+		staticSources = true
+		spotlights = true
+		muzzle = true
+		flashlight = true
+		flashlightPeers = false
+[spotlights]
+	maximum = 24
+	activationDistance = 512.0
+	[spotlights.beam]
+		volume = 0.4
+		glow = 1.8
+		occlusion = 2
+		shadowRange = 80
+		shadowBudget = 2
+		width = 1.0
+		debug = 0
+[tracerLight]
+	coreFraction = 0.15
+	[tracerLight.autocannon]
+		enabled = true
+		maximumCount = 128
+		radius = 6.0
+		brightness = 15.0
+	[tracerLight.bigCannon]
+		enabled = true
+		maximumCount = 128
+		radius = 12.0
+		brightness = 15.0
+[trail]
+	enabled = true
+	color = 16767392
+	lifetime = 12.0
+	size = 0.45
+	opacity = 0.9
+	drift = 0.06
+[disco]
+	enabled = true
+	colors = "1,4,11,14"
+	beams = 8
+	spinDegreesPerTick = 1.5
+	range = 32
+	width = 2
+	intensity = 6.0
+	falloff = 2
+	cullDistance = 64.0
+	scanIntervalTicks = 20
+	scanRadiusChunks = 4
+	upperHemisphere = true
+[shockwave]
+	enabled = true
+	mode = "BOTH"
+	meshBrightness = 0.2
+	meshSegments = 36
+	meshSize = 1.5
+	meshDuration = 0.6
+	meshExpansion = 1.0
+	ringEnabled = true
+	ringMinimumBlocks = 200
+	ringCountScale = 2.0
+	ringCore = ["1 createbigcannons:shrapnel_smoke{lifetime:15}"]
+	ringGroups = ["2 minecraft:cloud", "2 minecraft:end_rod"]
+	ringSpeedScale = 1.5
+	ringSpeedVariance = 0.0
+	meshScale = 1.0
+	shaderWave = true
+	refract = 0.9974999999999999
+	dispersion = 0.06
+	thickness = 1.0
+	initialRatio = 1.0
+	finalRatio = 0.25
+	compressionSpeed = 1.0
+[subLevels]
+	farBlockEntities = true
+	farBlockEntityNames = ["cannon", "flap"]
+		[muzzle.bigCannon.plumeAlpha]
+			initial = 0.7979999999999999
+			fadeFrom = 1.0
+			fadeRate = 1.5
+		[muzzle.tankCannon.plumeAlpha]
+			initial = 1.0
+			fadeFrom = 0.495
+			fadeRate = 1.5
+[clouds]
+	fogScale = 0.35
+	nearCull = 6.0
+	enabled = true
+	phase = false
+	multiScatter = false
+	intensity = 2.0
+	dynamic = true
+	spotlights = true
+	sphereReach = 0.0
+	reachScale = 1.0
+	falloffScale = 3.0
+	tracerGlow = 0.0
+	blastGlow = 0.0
+	integration = 0.0

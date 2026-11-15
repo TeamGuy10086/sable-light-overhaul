@@ -1,11 +1,50 @@
+# Build outputs and third-party binaries
 .gradle/
 build/
 run/
-libs/*.jar
-# prepare-libs.ps1 unpacks these out of lamb-runtime.jar, so they are derived third-party binaries too.
-# The single-level pattern above does not reach into a subdirectory, which is how they were getting in.
+logs/
 libs/**/*.jar
+libs/*.jar
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+__pycache__/
+*.pyc
 .idea/
 *.iml
-# Gradle writes its own debug logs here on every build (logs/debug-N.log.gz), and they are not ours.
-logs/
+.env
+.env.*
+
+# Private maintenance, diagnostics, author instances and local history
+/docs/
+/research/
+/work/
+/handoff/
+/examples/
+/history.bundle
+/.agents/
+/.codex/
+/local-deploy.json
+/assets/
+/shaderpack/
+/*.md
+!/README.md
+!/README.zh-CN.md
+
+# Original shader packs and generated complete packs stay local
+/patch/baselines/
+/patch/photon/
+/patch/complementary/
+/patch/complementary-euphoria/
+/patch/mellow/
+/patch/*.md
+/patch/preview-*
+
+# Author-only automation and historical instance migration
+/tools/modeling/
+/tools/inspect-crash.ps1
+/tools/deploy-when-closed.ps1
+/patch/make-distribute.ps1
+/patch/migrate-dust-defaults.ps1
+/patch/migrate-flashlight-units.ps1

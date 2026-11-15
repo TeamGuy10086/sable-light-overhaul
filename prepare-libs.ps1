@@ -1,9 +1,10 @@
-param([Parameter(Mandatory=$true)][string]$CbcJar, [string]$CbcatJar, [Parameter(Mandatory=$true)][string]$SableJar, [Parameter(Mandatory=$true)][string]$LambJar, [Parameter(Mandatory=$true)][string]$CreateJar, [Parameter(Mandatory=$true)][string]$YuushyaJar, [Parameter(Mandatory=$true)][string]$CopycatsJar, [Parameter(Mandatory=$true)][string]$CopyfoxiesJar)
+param([Parameter(Mandatory=$true)][string]$CbcJar, [string]$CbcatJar, [Parameter(Mandatory=$true)][string]$RplJar, [Parameter(Mandatory=$true)][string]$SableJar, [Parameter(Mandatory=$true)][string]$CreateJar, [Parameter(Mandatory=$true)][string]$CopycatsJar, [Parameter(Mandatory=$true)][string]$CopyfoxiesJar, [string]$WolfMiscJar)
 $ErrorActionPreference = 'Stop'
 $expectedCbc = 'EA017AB94637032D039899D88404838D173FA0E6286657CAE6A6C3AF459E87CA'
 if ((Get-FileHash -LiteralPath $CbcJar -Algorithm SHA256).Hash -ne $expectedCbc) { throw 'CBC binary differs from the inspected attachment.' }
 $destination = Join-Path $PSScriptRoot 'libs'
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
+if ($WolfMiscJar) { Copy-Item -LiteralPath $WolfMiscJar -Destination (Join-Path $destination 'wolfmisc.jar') }
 Copy-Item -LiteralPath $CbcJar -Destination (Join-Path $destination 'cbc.jar')
 if ($CbcatJar) {
     $expectedCbcat = 'C7A08EEA5EF2D69EB8052B9DA2A5628F10A78CB786896352891D203F36A890E7'
@@ -20,34 +21,27 @@ try {
     $entry = $archive.GetEntry('META-INF/jarjar/sable-companion-common-1.21.1-1.6.0.jar')
     [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $destination 'sable-companion.jar'), $true)
 } finally { $archive.Dispose() }
-if ((Get-FileHash -LiteralPath $LambJar -Algorithm SHA256).Hash -ne '913B0358B1031828F1E060EA0EE361232DC2A1C82464F488A0A920739CE7C763') { throw 'Expected inspected LambDynamicLights 4.8.11+1.21.1.' }
-function Expand-NestedJars([string]$JarPath, [string]$OutputDirectory) {
-    $zip = [IO.Compression.ZipFile]::OpenRead($JarPath)
-    try {
-        foreach ($item in $zip.Entries) {
-            if (!$item.FullName.EndsWith('.jar')) { continue }
-            $target = Join-Path $OutputDirectory ([IO.Path]::GetFileName($item.FullName))
-            [IO.Compression.ZipFileExtensions]::ExtractToFile($item, $target, $true)
-            Expand-NestedJars $target $OutputDirectory
-        }
-    } finally { $zip.Dispose() }
-}
-$nested = Join-Path $destination 'lamb-deps'
-New-Item -ItemType Directory -Force -Path $nested | Out-Null
-Expand-NestedJars $LambJar $nested
-Copy-Item -LiteralPath (Join-Path $nested 'lambdynamiclights-4.8.11+1.21.1-neoforge.jar') -Destination (Join-Path $destination 'lamb-runtime.jar')
-Copy-Item -LiteralPath (Join-Path $nested 'lambdynamiclights-api-4.8.11+1.21.1-mojmap.jar') -Destination (Join-Path $destination 'lamb-api.jar')
 $archive = [IO.Compression.ZipFile]::OpenRead($CreateJar)
 try {
     $entry = $archive.GetEntry('META-INF/jarjar/flywheel-neoforge-1.21.1-1.0.6.jar')
     if (!$entry) { throw 'Expected Create 6.0.10 containing Flywheel 1.0.6.' }
     [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $destination 'flywheel.jar'), $true)
+    $cbcDeps = Join-Path $destination 'cbc-deps'
+    New-Item -ItemType Directory -Force -Path $cbcDeps | Out-Null
+    foreach ($name in @('Registrate-MC1.21-1.3.0+67.jar', 'ponder-neoforge-1.0.82+mc1.21.1.jar')) {
+        $dependency = $archive.GetEntry('META-INF/jarjar/' + $name)
+        if (!$dependency) { throw "Missing CBC compile dependency $name in Create." }
+        [IO.Compression.ZipFileExtensions]::ExtractToFile($dependency, (Join-Path $cbcDeps $name), $true)
+    }
+    Copy-Item -LiteralPath $RplJar -Destination (Join-Path $cbcDeps 'rpl.jar')
 } finally { $archive.Dispose() }
 if ((Get-FileHash (Join-Path $destination 'flywheel.jar') -Algorithm SHA256).Hash -ne '31DDA15C205EB596D3B3449EF03F6AF7363A6CD35B3DA4BFE916B304F9E5337E') { throw 'Unexpected Flywheel binary.' }
+  if ((Get-FileHash -LiteralPath $CreateJar -Algorithm SHA256).Hash -ne 'EF87FE5709F1BA1F5B8BB20A2925B5AFB4669E178FD6D8BF10C167759EEFE37A') { throw 'Unexpected Create binary.' }
+  # Create's own classes are compiled against now: the contraption renderer is where a cannon's barrel is
+  # drawn, so the jar is kept as well as unpacked for Flywheel.
+  Copy-Item -LiteralPath $CreateJar -Destination (Join-Path $destination 'create.jar')
 Write-Output 'Dependencies prepared for compilation/tests only; none are bundled. Java 21: gradlew.bat build.'
 
-if ((Get-FileHash -LiteralPath $YuushyaJar -Algorithm SHA256).Hash -ne 'EEDE4BD24A1B20AEB007C03761903AED8061B9B826DC68349A8CA146C9944AE5') { throw 'Unexpected yuushya binary.' }
-Copy-Item -LiteralPath $YuushyaJar -Destination (Join-Path $destination 'yuushya.jar')
 
 if ((Get-FileHash -LiteralPath $CopycatsJar -Algorithm SHA256).Hash -ne '8480E2A62EAA625F75776831C1D8A9EF3D77D2D816FA2E67566C6EC25BA745D1') { throw 'Unexpected copycats binary.' }
 Copy-Item -LiteralPath $CopycatsJar -Destination (Join-Path $destination 'copycats.jar')

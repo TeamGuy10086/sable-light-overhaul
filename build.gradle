@@ -2,31 +2,47 @@ plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.147'
 }
-group = 'dev.cbcmuzzlelight'
-version = '0.1.0'
+group = 'dev.sablelightoverhaul'
+version = '0.1.638'
 base { archivesName = 'sable-light-overhaul' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
 neoForge {
     version = '21.1.228'
     runs { client { client() }; server { server(); programArgument '--nogui' } }
-    mods { cbcmuzzlelight { sourceSet sourceSets.main } }
+    mods { sablelightoverhaul { sourceSet sourceSets.main } }
 }
 repositories { mavenCentral() }
 dependencies {
-    compileOnly files('libs/cbc.jar', 'libs/sable.jar', 'libs/sable-companion.jar', 'libs/lamb-api.jar', 'libs/lamb-runtime.jar')
-    compileOnly files('libs/yuushya.jar')
+    compileOnly fileTree(dir: 'libs/cbc-deps', include: '*.jar')
+    compileOnly files('libs/create.jar', 'libs/cbc.jar', 'libs/sable.jar', 'libs/sable-companion.jar')
+    // AFN (Create: Advanced Frequency Network) is optional: its channel API is compile-only, and every
+    // reference to it sits behind a presence check in dev.sablelightoverhaul.lighting.channel.
+    compileOnly files('libs/afn.jar')
     compileOnly files('libs/iris.jar')
+    compileOnly files('libs/healthbar-api.jar', 'libs/wolfmisc.jar')
     // LDLib2 is the page toolkit Synaxis uses; it stays optional, so this is compile-only.
     // taffy and yoga are jar-in-jar inside it and must be extracted by prepare-libs.ps1.
     compileOnly files('libs/ldlib2.jar', 'libs/taffy.jar', 'libs/yoga.jar')
-    compileOnly fileTree(dir: 'libs/lamb-deps', include: '*.jar')
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.ow2.asm:asm-tree:9.8'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Language initializes vanilla's default dictionary even in headless localization tests.
+    testRuntimeOnly fileTree(dir: 'build/moddev/artifacts', include: '*-client-extra-aka-minecraft-resources.jar')
 }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21 }
 tasks.named('test') { useJUnitPlatform() }
+tasks.named('build') {
+    doLast {
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            def deployment = providers.exec {
+                workingDir rootDir
+                commandLine 'pwsh', '-NoProfile', '-File', 'tools/deploy-after-build.ps1'
+            }
+            logger.lifecycle(deployment.standardOutput.asText.get())
+        }
+    }
+}
 tasks.named('jar') {
     from('LICENSE')
     manifest { attributes('Implementation-Version': project.version) }
@@ -41,3 +57,34 @@ tasks.named('processResources', ProcessResources) {
 
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.compileClasspath
+
+// Optional backup path only; normal builds and player testing do not configure this server.
+if (project.hasProperty('flareIntegrationTests')) {
+// Isolated CBC runtime verification: no player instance or existing world is used.
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+neoForge {
+    mods { sloflaretest { sourceSet sourceSets.integrationTest } }
+    runs {
+        flareIntegration {
+            server()
+            gameDirectory = file('build/flare-integration')
+            programArgument '--nogui'
+            systemProperty 'slo.flareIntegration', 'true'
+        }
+    }
+}
+
+neoForge.runs.client.loadedMods = [neoForge.mods.sablelightoverhaul]
+neoForge.runs.server.loadedMods = [neoForge.mods.sablelightoverhaul]
+tasks.register('prepareFlareIntegrationMods', Copy) {
+    from files('libs/create.jar', 'libs/cbc.jar', 'libs/cbc-deps/rpl.jar')
+    into layout.buildDirectory.dir('flare-integration/mods')
+}
+neoForge.runs.flareIntegration.taskBefore(tasks.named('prepareFlareIntegrationMods'))
+
+}

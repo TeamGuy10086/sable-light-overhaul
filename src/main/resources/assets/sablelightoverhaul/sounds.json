@@ -1,0 +1,146 @@
+{
+  "naval.armor.he.76mm": {
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 0.839,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:entity.iron_golem.hurt",
+        "type": "event",
+        "pitch": 1.265,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.armor.he.127mm": {
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 0.679,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:entity.iron_golem.hurt",
+        "type": "event",
+        "pitch": 1.023,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.armor.he.203mm": {
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 0.54,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:entity.iron_golem.hurt",
+        "type": "event",
+        "pitch": 0.814,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.armor.ap.76mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.shield.block",
+        "type": "event",
+        "pitch": 1.299,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:item.trident.hit",
+        "type": "event",
+        "pitch": 1.092,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.armor.ap.127mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.shield.block",
+        "type": "event",
+        "pitch": 1.051,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:item.trident.hit",
+        "type": "event",
+        "pitch": 0.884,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.armor.ap.203mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.shield.block",
+        "type": "event",
+        "pitch": 0.836,
+        "volume": 1
+      },
+      {
+        "name": "minecraft:item.trident.hit",
+        "type": "event",
+        "pitch": 0.703,
+        "volume": 0.9
+      }
+    ]
+  },
+  "naval.ricochet.76mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.trident.hit_ground",
+        "type": "event",
+        "pitch": 1.553,
+        "volume": 0.92
+      },
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 1.897,
+        "volume": 0.7
+      }
+    ]
+  },
+  "naval.ricochet.127mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.trident.hit_ground",
+        "type": "event",
+        "pitch": 1.256,
+        "volume": 0.92
+      },
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 1.535,
+        "volume": 0.7
+      }
+    ]
+  },
+  "naval.ricochet.203mm": {
+    "sounds": [
+      {
+        "name": "minecraft:item.trident.hit_ground",
+        "type": "event",
+        "pitch": 0.999,
+        "volume": 0.92
+      },
+      {
+        "name": "minecraft:block.anvil.land",
+        "type": "event",
+        "pitch": 1.221,
+        "volume": 0.7
+      }
+    ]
+  }
+}

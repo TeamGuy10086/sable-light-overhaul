@@ -1,0 +1,17 @@
+{
+  "vertex": "sablelightoverhaul:slo_gpu_light",
+  "fragment": "sablelightoverhaul:slo_native_glow",
+  "blend": {"func": "add", "srcrgb": "one", "dstrgb": "one"},
+  "attributes": ["Position"],
+  "samplers": [{"name":"LodDepthSampler"}, {"name": "DepthSampler"}],
+  "uniforms": [
+    {"name":"uHasLod","type":"int","count":1,"values":[0]},
+    {"name":"uLodZeroToOne","type":"int","count":1,"values":[0]},
+    {"name":"uInvLodViewProj","type":"matrix4x4","count":16,"values":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]},
+    {"name":"uViewProj","type":"matrix4x4","count":16,"values":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]},
+    {"name": "GlowCentre", "type": "float", "count": 3, "values": [0.0]},
+    {"name": "GlowShape", "type": "float", "count": 4, "values": [0.0]},
+    {"name": "GlowColor", "type": "float", "count": 3, "values": [0.0]},
+    {"name": "ScreenSize", "type": "float", "count": 2, "values": [1.0]}
+  ]
+}

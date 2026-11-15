@@ -1,0 +1,212 @@
+[haze]
+	hazeInterval = 0
+	hazeCount = 1
+	hazeLifetime = 200
+	hazeAlpha = 0.1014
+	hazeSize = 8.0
+	muzzleSpread = 0.02
+	muzzleDrift = 0.05
+	muzzleSink = 0.0
+	muzzleClearance = 1.0
+	muzzlePush = 0.02
+	muzzlePushRadius = 3.0
+	lightGain = 1.6
+	enabled = true
+	autocannon = true
+[staticSources]
+	sendRange = 1024.0
+	[staticSources.spotlight]
+		minimumDistance = 16
+		maximumDistance = 512
+		distanceStep = 32
+	[staticSources.colors]
+		overrides = []
+		guessFromName = true
+[generators]
+	enabled = true
+	scanBodyIntervalTicks = 40
+	emitIntervalTicks = 2
+	particlesPerTick = 60
+	debugLog = false
+	[generators.dust]
+		rate = 8.0
+		maxPerScan = 6
+		searchDepth = 12
+		minSpeed = 0.05
+		lifetimeMin = 40
+		lifetimeMax = 60
+		sizeMin = 1.0
+		sizeMax = 2.0
+		stretchMin = 1.0
+		stretchMax = 1.0
+		upSpeedMin = 0.05
+		upSpeedMax = 0.08
+		scatter = 1.0
+		tintFromBlock = false
+	[generators.smoke]
+		intervalAtMaxSignal = 2
+		intervalAtMinSignal = 10
+		countAtMaxSignal = 2
+		countAtMinSignal = 1
+		riseSpeed = 0.03
+		directionYaw = 0.0
+		directionPitch = 0.0
+		speed = 0.15
+		offsetY = 0.0
+		lifetime = 90
+		size = 0.9
+		opacity = 0.5
+		fade = 0.4
+	[generators.dustPhysics]
+		horizontalDamping = 0.75
+		gravity = 0.08
+		alpha = 0.35
+		fade = 0.4
+[profiles]
+	enabled = false
+[debug]
+	effects = false
+	[muzzle.tankCannon]
+		enabled = true
+		particlesPerShot = 1024
+		plumeScale = 1.0
+		[muzzle.tankCannon.breechSmoke]
+			fixPositionAndSpeed = true
+			speedScale = 10.0
+		[muzzle.tankCannon.groundDust]
+			lifetime = 60
+			color = 11770488
+			count = 120
+			searchDistance = 24
+			radius = 23.962500000000002
+			speed = 0.5
+			tintFromBlock = false
+			scatter = 4.0
+			damping = 0.75
+			gravity = 0.06
+			alpha = 0.49979999999999997
+			sizeMin = 2.0
+			sizeMax = 4.0
+			stretchMin = 1.0
+			stretchMax = 2.0
+			fade = 0.5
+			mode = "FIELD"
+			density = 1.5
+			[muzzle.tankCannon.groundDust.field]
+				resolution = 8
+				spreadSeconds = 0.198
+				speed = 3.5
+				lift = 1.8
+				turbulence = 0.7
+				sizeScale = 1.59375
+				maxStep = 1.25
+				heightScale = 0.7995
+				corridorWidth = 6.0
+				outerLift = 0.6
+				motionScale = 0.741
+		[muzzle.tankCannon.hullDust]
+			lifetime = 20
+			color = 12495244
+			count = 60
+			radius = 16.0
+			sizeMin = 2.0
+			sizeMax = 3.0
+			speed = 0.96
+			stretchMin = 3.0
+			stretchMax = 6.0
+			damping = 0.801
+			gravity = 0.1
+			alpha = 0.2989
+			fade = 0.7987
+			surfaceFlow = true
+			[muzzle.tankCannon.hullDust.flow]
+				color = 12495244
+				lift = 0.96
+				turbulence = 0.7
+				releaseSeconds = 0.105
+				motionScale = 0.65
+				surfaceCoupling = false
+				attachSeconds = 1.005
+				surfaceSpeed = 0.15
+				clearance = 0.059399999999999994
+				inheritMotion = 0.6
+				density = 1.0
+				clusterSpread = 0.3
+				clusterStagger = 0.1
+				detachFadeSeconds = 0.45
+				detachExpansion = 0.0
+				frontCoverage = 0.6
+		[muzzle.tankCannon.fireball]
+			enabled = true
+			count = 32
+			length = 4.0
+			coneAngle = 25.0
+			size = 0.7
+			lifetime = 10
+			alpha = 0.3
+		[muzzle.tankCannon.plume]
+			width = 0.45
+			travel = 4.0
+			releaseTicks = 4
+			lifetime = 40
+			expansion = 1.8
+			amount = 24
+[explosions]
+	minimumBlocks = 200
+	blastBuriedDepth = 6
+	minimumPower = 4.0
+	airBand = 12.0
+	blastGroundBand = 4.0
+	blastBuriedSolidity = 0.85
+	blastDownUpRatio = 0.75
+	yieldTiers = [6, 12, 18, 24, 32]
+	lightCharge = 5.0
+	lightSizeScale = 1.0
+	[explosions.light]
+		enabled = true
+	[explosions.shockwave]
+		enabled = true
+[tracerFeed]
+	feedEnabled = true
+	debug = false
+[voxy]
+	enabled = true
+	saveChunks = true
+	maxColumnsPerEvent = 24
+	nudgeDelay = 40
+	minimumBlocks = 4
+	saveIntervalTicks = 40
+	immediateRange = 512
+[flashlight]
+	color = 0
+	range = 3
+	width = 22
+	decay = 100
+	falloff = 2
+	intensity = 10
+	pointRadius = 3
+	pointIntensity = 10
+	syncRange = 48
+[disco]
+	colors = "1,4,11"
+	beams = 8
+	spinDegreesPerTick = 1.5
+	range = 32
+	width = 2
+	intensity = 6.0
+	falloff = 0
+[farEntities]
+	enabled = true
+	names = ["cannon", "flap", "pitch_contraption", "munitions_contraption"]
+	range = 512
+	debug = true
+[hullDust]
+	enabled = true
+	radius = 16.0
+[particles]
+	generatorCull = 1024
+	forceLoad = true
+	muzzleCull = 1024
+	shockwaveRange = 1024.0
+	tracerFeedRange = 1024
+	explosionCull = 1024

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.sablelightoverhaul.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ServerBlockLightMixin",
+    "ServerParticleRangeMixin",
+    "ServerLightEngineAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
