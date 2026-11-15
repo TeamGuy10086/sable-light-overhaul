@@ -91,16 +91,23 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
   if(group!=null)group.capture(this);
  }
  /** Fixture puffs use the production mesh/material at a fixed cold age and bypass the live smoke budget. */
- static List<BigSmokeParticle> benchmarkPuffs(ClientLevel level,Vec3 eye,Vec3 look,int count){
+ static List<BigSmokeParticle> benchmarkPuffs(ClientLevel level,Vec3 eye,Vec3 look,int count,boolean overlay){
   Vec3 origin=eye.add(look.scale(13));
   var appearance=new Appearance(4,2.4,160,20,1,1,.72,0,3.8,1.6,.95,1,1,0,
       BigSmokeConfig.DENSITY_DETAIL.get(),false);
   var result=new ArrayList<BigSmokeParticle>(count);
   for(int index=0;index<count;index++){
    var puff=new BigSmokeParticle(level,origin,look,null,index,0,appearance);
-   puff.benchmark=true;
+   puff.benchmarkIndex=index;
    puff.age=112;
-   puff.positionAt(puff.age/20.0);
+   if(overlay){
+    // Align every submitted quad in both position and footprint, including its rotation.
+    puff.benchmarkSize=4.5f;
+    puff.roll=0;puff.oRoll=0;
+    puff.setPos(origin.x,origin.y,origin.z);
+   }else{
+    puff.positionAt(puff.age/20.0);
+   }
    puff.xo=puff.x;puff.yo=puff.y;puff.zo=puff.z;
    puff.quadSize=puff.getQuadSize(0);
    double size=puff.quadSize;
@@ -111,10 +118,11 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
   }
   return result;
  }
- private boolean benchmark;
+ private int benchmarkIndex=-1;
+ private float benchmarkSize;
  private double windX,windZ;
  @Override public void tick(){
-  if(benchmark)return;
+  if(benchmarkIndex>=0)return;
   xo=x;yo=y;zo=z;
   if(!available()||epoch!=ClientFlashes.visualEpoch()||age++>=lifetime){remove();return;}
   var wind=ParticleWind.step();
@@ -154,18 +162,21 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
     .add(0,rise*seconds*(1-Math.exp(-seconds)),0);
   setPos(at.x+windX,at.y,at.z+windZ);
  }
- @Override public float getQuadSize(float partial){return (float)(radius*dev.sablelightoverhaul.BigSmokeBirthModel.growth((age+birthTick+partial)/20.0,expansion,cold,coldSize));}
+ @Override public float getQuadSize(float partial){return benchmarkSize>0?benchmarkSize:(float)(radius*dev.sablelightoverhaul.BigSmokeBirthModel.growth((age+birthTick+partial)/20.0,expansion,cold,coldSize));}
  @Override public ParticleRenderType getRenderType(){return MuzzleParticleLayer.TYPE;}
  @Override public void render(com.mojang.blaze3d.vertex.VertexConsumer out,net.minecraft.client.Camera camera,float partial){
-  if(benchmark)partial=0;
+  if(benchmarkIndex>=0){
+   if(!SmokeBenchmark.drawPuff(benchmarkIndex))return;
+   partial=0;
+  }
   float size=getQuadSize(partial),a=coverage(partial);
   if(SmokeTrace.on())SmokeTrace.row("render",age,partial,a,proceduralEncoded(partial),x,y,z,size);
   if(a<.002)return;
   if(MuzzleParticleLayer.proceduralSmoke()){
-   if(benchmark)SmokeBenchmark.noteDraw();
+   if(benchmarkIndex>=0)SmokeBenchmark.noteDraw(benchmarkIndex);
    int encoded=proceduralEncoded(partial);
    float detail=(float)(densityDetail*Math.clamp(((age+partial)/lifetime-.30)/.45,0,1));
-   if(BigSmokeConfig.FLIPBOOK.get()||(BigSmokeConfig.SINGLE_PASS.get()&&ClientFlashes.inPackLighting()))MuzzleSmokeMesh.drawThermalCluster(out,camera,x,y,z,xo,yo,zo,partial,size,size,roll,encoded,
+   if(singleQuad())MuzzleSmokeMesh.drawThermalCluster(out,camera,x,y,z,xo,yo,zo,partial,size,size,roll,encoded,
     a,opacity,breakup(partial),detail,GasVertexData.smokeLight(super.getLightColor(partial)));
    else MuzzleSmokeMesh.drawThermalPuff(out,camera,x,y,z,xo,yo,zo,partial,size,size,roll,encoded,
     a,opacity,breakup(partial),detail,GasVertexData.smokeLight(super.getLightColor(partial)));
@@ -175,6 +186,7 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
     .28f+.55f*heat,.29f+.32f*heat,.31f+.10f*heat,a,MuzzleParticleLayer.markLight(super.getLightColor(partial),false));
   }
  }
+ static boolean singleQuad(){return BigSmokeConfig.FLIPBOOK.get()||(BigSmokeConfig.SINGLE_PASS.get()&&ClientFlashes.inPackLighting());}
  public double slo$x(){return x;}public double slo$y(){return y;}public double slo$z(){return z;}
  public double slo$px(){return xo;}public double slo$py(){return yo;}public double slo$pz(){return zo;}
  public double slo$size(){return getQuadSize(0);}public boolean slo$alive(){return !removed;}

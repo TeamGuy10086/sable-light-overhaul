@@ -1,4 +1,7 @@
 {
+  "sablelightoverhaul.smokeBench.needsSingleQuad": "叠层测试要求每朵烟只画一个面。请先开启大炮预烘焙烟雾动画。",
+  "sablelightoverhaul.smokeBench.layersStart": "从 1 层逐一测到 %s 层，约 %s 秒。请朝向开阔处，保持位置和视角固定，关闭垂直同步并提高帧率上限。",
+  "sablelightoverhaul.smokeBench.layersResult": "1 层 %s | %s 层 %s。逐层统计见 latest.log。",
   "sablelightoverhaul.smokeBench.active": "已有烟雾测试在运行。可用 /slosmoke bench stop 停止。",
   "sablelightoverhaul.smokeBench.unavailable": "请在世界里启用 SLO 大炮烟与支持的光照后端，并将 /slosmoke 设为 fixed。",
   "sablelightoverhaul.smokeBench.trace": "请先用 /slosmoke trace 关闭逐粒子跟踪。",

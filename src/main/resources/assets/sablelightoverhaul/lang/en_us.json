@@ -1,4 +1,7 @@
 {
+  "sablelightoverhaul.smokeBench.needsSingleQuad": "Layer tests need one quad per puff. Enable the pre-baked big-cannon smoke animation first.",
+  "sablelightoverhaul.smokeBench.layersStart": "Testing each layer count from 1 to %s, about %s seconds. Face an open area, hold position and view, disable VSync and raise the FPS cap.",
+  "sablelightoverhaul.smokeBench.layersResult": "1 layer %s | %s layers %s. See latest.log for each layer count.",
   "sablelightoverhaul.smokeBench.active": "A smoke benchmark is already running. Use /slosmoke bench stop to stop it.",
   "sablelightoverhaul.smokeBench.unavailable": "Enable SLO big-cannon smoke and a supported lighting backend in a world, then select /slosmoke fixed.",
   "sablelightoverhaul.smokeBench.trace": "Disable the particle trace with /slosmoke trace first.",
