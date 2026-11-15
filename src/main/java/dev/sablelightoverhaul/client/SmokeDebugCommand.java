@@ -65,6 +65,12 @@ public final class SmokeDebugCommand {
                     .executes(context -> spawn(context.getSource(),
                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count"),
                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "power"))))));
+        root.then(Commands.literal("bench")
+            .executes(context -> SmokeBenchmark.start(32))
+            .then(Commands.literal("stop").executes(context -> SmokeBenchmark.stop()))
+            .then(Commands.argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 128))
+                .executes(context -> SmokeBenchmark.start(
+                    com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count")))));
         event.getDispatcher().register(root);
     }
 

@@ -108,6 +108,7 @@ dev.sablelightoverhaul.ClientHooks.install(
         // The smoke material contract is testable on its own: /slosmoke switches one candidate at a
         // time (depth write, blend, one lobe) so a screenshot can be attributed to exactly one of them.
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(SmokeDebugCommand::register);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(SmokeBenchmark::onFrame);
         // F9 and the mod-list button open the same configuration manager.
         bus.addListener(dev.sablelightoverhaul.client.ui.ConfigKey::register);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(dev.sablelightoverhaul.client.ui.ConfigKey::tick);
