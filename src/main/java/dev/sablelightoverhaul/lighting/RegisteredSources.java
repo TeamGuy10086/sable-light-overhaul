@@ -66,6 +66,8 @@ public final class RegisteredSources extends SavedData {
  /** The face order the mask uses, as the page labels them and the shader tests them. */
  public static final String[] FACE_BITS={"下","上","北","南","西","东"};
  public final Map<Integer,Entry> entries=new LinkedHashMap<>();private int nextId=1;
+ private long revision;
+ long revision() { return revision; }
  /**
   * Every change to the registry goes through here, so this is where the take-over is told that its cached
   * positions are stale. Without it the cache would have to be rebuilt on a timer -- which is what it used to do,
@@ -73,7 +75,7 @@ public final class RegisteredSources extends SavedData {
   */
  @Override public void setDirty() {
   super.setDirty();
-  ServerTakeOver.invalidate();
+  revision++;
  }
  public static RegisteredSources get(ServerLevel level) {return level.getDataStorage().computeIfAbsent(new Factory<>(RegisteredSources::new,RegisteredSources::load),"sablelightoverhaul_sources");}
  public Entry find(SourceAnchor a,boolean spot) {return entries.values().stream().filter(e->e.spotlight==spot && e.anchor.equals(a)).findFirst().orElse(null);}

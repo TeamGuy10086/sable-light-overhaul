@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ServerBlockLightMixin {
     @Inject(method = "getEmission", at = @At("RETURN"), cancellable = true)
     private void slo$serverEmission(long pos, BlockState state, CallbackInfoReturnable<Integer> cir) {
+        if (cir.getReturnValueI() == 0) return;
         Object world = ((ServerLightEngineAccessor) this).slo$serverChunks().getLevel();
         if (!(world instanceof ServerLevel server)) return;
         if (ServerTakeOver.isLamp(server, pos)) cir.setReturnValue(0);
