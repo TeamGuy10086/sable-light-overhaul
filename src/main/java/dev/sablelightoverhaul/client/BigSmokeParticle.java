@@ -27,7 +27,9 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  static void sprites(SpriteSet value){sprites=value;}
  public static boolean available(){return sprites!=null&&ClientFlashes.effectsEnabled()&&BigSmokeConfig.ENABLED.get();}
  public static int lobeCount(float charge){
-  return qualityCount((double)charge*BigSmokeConfig.COUNT.get());
+  double count=(double)charge*BigSmokeConfig.COUNT.get();
+  if(BigSmokeConfig.PERFORMANCE.get())count*=0.75;
+  return qualityCount(count);
  }
  static int qualityCount(double count){
   int quality=switch(Minecraft.getInstance().options.particles().get()){case ALL->3;case DECREASED->2;case MINIMAL->1;};

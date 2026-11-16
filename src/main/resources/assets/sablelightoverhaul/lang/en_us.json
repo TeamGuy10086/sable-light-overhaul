@@ -822,7 +822,7 @@
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.chargeMaxScale": "Propellant charge size multiplier cap",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.flipbook": "Pre-baked smoke animation",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.performanceMode": "Smoke performance mode",
-  "sablelightoverhaul.text.7f45daa6e593986d": "Use a baked mask for edge erosion and cold smoke opacity detail in the thermal smoke material. Switch live to compare while preserving smoke count, motion and fade curves.",
+  "sablelightoverhaul.text.9c6506399c9c5273": "Use a baked mask for edge erosion and cold smoke opacity detail. When enabled, new CBC big-cannon shots emit about a quarter fewer thermal puffs, with the same motion and fade curves.",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeCull": "Cull faint smoke edges",
   "sablelightoverhaul.text.c0806be481958e66": "Enabled by default. Skip almost invisible thermal smoke fragments before lighting and blending, with a soft falloff. Disable to restore the original opacity curve.",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeThreshold": "Smoke edge alpha cutoff",
