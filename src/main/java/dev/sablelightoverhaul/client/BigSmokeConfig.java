@@ -46,7 +46,7 @@ public final class BigSmokeConfig {
   CHARGE_EXPONENT=b.comment("装药尺寸曲线指数（0~2），默认0.5；横向、纵向及大炮闪燃一并缩放，0关闭装药尺寸差异，不增加粒子数。").defineInRange("chargeExponent",.5,0.0,2.0);
   CHARGE_MAX=b.comment("装药尺寸倍率上限（0.1~16），默认6；替代旧固定1.8上限。极大尺寸仍可能有明显透明绘制开销。").defineInRange("chargeMaxScale",6.0,.1,16.0);
   FLIPBOOK=b.comment("六组预烘焙烟雾动画，默认开启；每瓣随机选一组并插值播放。关闭恢复程序化噪声供A/B；不改变运动、数量和透明层。开启时统一单面绘制，singlePass仅控制旧程序化路径。").define("flipbook",true);
-  PERFORMANCE=b.comment("使用预烘焙遮罩计算边缘侵蚀和冷烟透明度纹理。开启后，新发射的 CBC 大炮热烟减少约四分之一，保留烟团的运动及消散曲线。").define("performanceMode",false);
+  PERFORMANCE=b.comment("使用预烘焙遮罩计算边缘侵蚀和冷烟透明度纹理。开启后，新发射的 CBC 大炮热烟数量减半并向上取整，轴向喷射距离缩至原来的三分之二。").define("performanceMode",false);
   SOFT_EDGE_CULL=b.comment("默认开启。几乎透明的热烟材质片元在后续受光与混合前退出，弱边缘平滑渐退。关闭可恢复原始透明度曲线。").define("softEdgeCull",true);
   SOFT_EDGE_THRESHOLD=b.comment("弱透明烟边早退的 Alpha 丢弃阈值，范围 0.002~0.100，默认 0.016（1.6%）。弱边缘渐退带宽为 0.034。可实时调整，仅在早退开启时生效。").defineInRange("softEdgeThreshold",0.016,0.002,0.100);
   SIMPLE_LIGHTING=b.comment("大炮热烟使用环境底色和燃烧自发光，默认开启；跳过逐灯受光和太阳阴影。跟烟光源仍照亮周围，冷却/消散不变。关闭恢复完整受光供A/B，仅Advanced路径生效。").define("simpleLighting",true);

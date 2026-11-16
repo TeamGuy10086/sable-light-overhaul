@@ -27,9 +27,8 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  static void sprites(SpriteSet value){sprites=value;}
  public static boolean available(){return sprites!=null&&ClientFlashes.effectsEnabled()&&BigSmokeConfig.ENABLED.get();}
  public static int lobeCount(float charge){
-  double count=(double)charge*BigSmokeConfig.COUNT.get();
-  if(BigSmokeConfig.PERFORMANCE.get())count*=0.75;
-  return qualityCount(count);
+  int count=qualityCount((double)charge*BigSmokeConfig.COUNT.get());
+  return BigSmokeConfig.PERFORMANCE.get()?(count+1)/2:count;
  }
  static int qualityCount(double count){
   int quality=switch(Minecraft.getInstance().options.particles().get()){case ALL->3;case DECREASED->2;case MINIMAL->1;};
@@ -41,14 +40,16 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  /** Each emission batch evicts the oldest cannon lobes to fit its own budget. */
  public static void emit(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int tick,int total,int release,float power){
   if(!available())return;
-  emit(level,origin,direction,group,tick,total,release,cannonAppearance(power));
+  emit(level,origin,direction,group,tick,total,release,cannonAppearance(power,BigSmokeConfig.PERFORMANCE.get()));
  }
 
- private static Appearance cannonAppearance(float power){
+ private static Appearance cannonAppearance(float power,boolean performance){
   double charge=BigSmokeModel.chargeScale(power,BigSmokeConfig.CHARGE_REFERENCE.get(),BigSmokeConfig.CHARGE_EXPONENT.get(),BigSmokeConfig.CHARGE_MAX.get());
   double scale=BigSmokeConfig.SCALE.get()*charge,base=BigSmokeConfig.DIAMETER.get()*scale*.5;
   double flashWidth=MuzzleClientConfig.BIG_FIREBALL_ENABLED.get()?FireballParticle.bigWidth(charge):base;
-  return new Appearance(BigSmokeConfig.LENGTH.get()*scale,BigSmokeModel.linkedRadius(base,flashWidth,BigSmokeConfig.FLASH_LINK.get()),
+  double reach=BigSmokeConfig.LENGTH.get()*scale;
+  if(performance)reach*=2.0/3.0;
+  return new Appearance(reach,BigSmokeModel.linkedRadius(base,flashWidth,BigSmokeConfig.FLASH_LINK.get()),
       BigSmokeConfig.LIFE.get(),BigSmokeConfig.HOT_TICKS.get(),BigSmokeConfig.ROOT_HOT_SCALE.get(),BigSmokeConfig.TIP_HOT_SCALE.get(),
       BigSmokeConfig.OPACITY.get()*ExtraConfig.BIG_PLUME_ALPHA.get(),BigSmokeConfig.RISE.get(),BigSmokeConfig.SPREAD.get(),
       BigSmokeConfig.EXPANSION.get(),BigSmokeConfig.FADE_FROM.get(),BigSmokeConfig.COLD_FRACTION.get(),BigSmokeConfig.COLD_SIZE.get(),
@@ -131,7 +132,7 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  static List<BigSmokeParticle> benchmarkShot(ClientLevel level,Vec3 eye,Vec3 look,float yaw){
   int total=SmokeBenchmark.SHOT_PUFFS;
   int release=BigSmokeConfig.RELEASE_TICKS.get();
-  Appearance appearance=cannonAppearance(8);
+  Appearance appearance=cannonAppearance(8,false);
   Vec3 origin=eye.add(look.scale(10));
   Vec3 side=Vec3.directionFromRotation(0,yaw+90);
   Vec3 direction=look.add(side.scale(.35)).normalize();

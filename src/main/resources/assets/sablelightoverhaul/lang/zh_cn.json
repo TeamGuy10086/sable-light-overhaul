@@ -818,7 +818,7 @@
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.chargeMaxScale": "装药尺寸倍率上限",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.flipbook": "预烘焙烟雾动画",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.performanceMode": "烟雾性能档",
-  "sablelightoverhaul.text.9c6506399c9c5273": "使用预烘焙遮罩计算边缘侵蚀和冷烟透明度纹理。开启后，新发射的 CBC 大炮热烟减少约四分之一，保留烟团的运动及消散曲线。",
+  "sablelightoverhaul.text.31d5aff101405c06": "使用预烘焙遮罩计算边缘侵蚀和冷烟透明度纹理。开启后，新发射的 CBC 大炮热烟数量减半并向上取整，轴向喷射距离缩至原来的三分之二。",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeCull": "弱透明烟边早退",
   "sablelightoverhaul.text.c0806be481958e66": "默认开启。几乎透明的热烟材质片元在后续受光与混合前退出，弱边缘平滑渐退。关闭可恢复原始透明度曲线。",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeThreshold": "烟边丢弃阈值",
