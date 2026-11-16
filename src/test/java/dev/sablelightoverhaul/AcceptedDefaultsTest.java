@@ -44,6 +44,7 @@ class AcceptedDefaultsTest {
             expected.put("particles.muzzle.bigCannon.thermalSmoke.flipbook",true);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.performanceMode",false);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.softEdgeCull",true);
+            expected.put("particles.muzzle.bigCannon.thermalSmoke.softEdgeThreshold",0.016);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.simpleLighting",true);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.ambientGain",1.0);
             expected.put("particles.muzzle.bigCannon.thermalSmoke.emissionGain",128.0);

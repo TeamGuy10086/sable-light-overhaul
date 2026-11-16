@@ -87,15 +87,21 @@ uniform sampler2D sloTankSmokeAtlas;
 uniform sampler2D sloSmokeMask;
 uniform int sloSmokePerformance;
 uniform int sloSmokeEdgeCull;
-const float SLO_SMOKE_EDGE_MIN = 0.016;
-const float SLO_SMOKE_EDGE_FULL = 0.050;
+uniform float sloSmokeEdgeThreshold;
+
+float slo_smoke_edge_min() {
+    // Shader packs can be reloaded before the updated mod is installed.
+    if(sloSmokeEdgeThreshold<=0.0) return 0.016;
+    return clamp(sloSmokeEdgeThreshold,0.002,0.100);
+}
 
 void slo_thermal_shape(vec2 p,float seed,vec4 tint);
 
 float slo_soft_smoke_alpha(float alpha) {
     if(sloSmokeEdgeCull==0) return alpha;
-    if(alpha<=SLO_SMOKE_EDGE_MIN) discard;
-    return alpha*smoothstep(SLO_SMOKE_EDGE_MIN,SLO_SMOKE_EDGE_FULL,alpha);
+    float cutoff = slo_smoke_edge_min();
+    if(alpha<=cutoff) discard;
+    return alpha*smoothstep(cutoff,cutoff+0.034,alpha);
 }
 
 // Six seed-stable tiles. Sample between texel centers without crossing a tile boundary.
@@ -121,7 +127,7 @@ vec4 slo_smoke_flipbook(vec2 p,float encoded,float steady,vec4 tint) {
         float body=smoothstep(0.55*sloThermalCut,sloThermalCut+0.11,alpha);
         float fringe=0.35*smoothstep(0.0,sloThermalCut+0.20,alpha);
         float maxCoverage=min(1.0,1.8*sloThermalLife)*mix(fringe,1.0,body);
-        if(maxCoverage<=SLO_SMOKE_EDGE_MIN) discard;
+        if(maxCoverage<=slo_smoke_edge_min()) discard;
     }
     slo_thermal_shape(p,encoded,tint);
     vec3 fields=data.rgb/max(data.a,1e-5); // filter premultiplied data to avoid coloured rims

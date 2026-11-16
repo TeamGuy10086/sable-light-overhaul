@@ -821,6 +821,8 @@
   "sablelightoverhaul.text.7f45daa6e593986d": "使用预烘焙遮罩计算热烟材质的边缘侵蚀和冷烟透明度纹理。可实时切换对比，保留烟量、运动及消散曲线。",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeCull": "弱透明烟边早退",
   "sablelightoverhaul.text.c0806be481958e66": "默认开启。几乎透明的热烟材质片元在后续受光与混合前退出，弱边缘平滑渐退。关闭可恢复原始透明度曲线。",
+  "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.softEdgeThreshold": "烟边丢弃阈值",
+  "sablelightoverhaul.text.bb1e071d71a52f2a": "弱透明烟边早退的 Alpha 丢弃阈值，范围 0.002~0.100，默认 0.016（1.6%）。弱边缘渐退带宽为 0.034。可实时调整，仅在早退开启时生效。\n Default: 0.016\n Range: 0.002 ~ 0.1",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.simpleLighting": "简化受光",
   "sablelightoverhaul.config.key.particles.muzzle.bigCannon.thermalSmoke.ambientGain": "环境底色倍率",
   "sablelightoverhaul.config.key.particles.muzzle.tankCannon.smokeCached": "预烘焙单面坦克烟",

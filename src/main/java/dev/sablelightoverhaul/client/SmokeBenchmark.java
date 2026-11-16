@@ -67,9 +67,9 @@ final class SmokeBenchmark {
             lengths = new int[phases.length];
             drawnSamples = new int[phases.length];
             visualEpoch = ClientFlashes.visualEpoch();
-            settings = String.format(Locale.ROOT, "puffs=%d, maxDrawn=%d, backend=%s, render=%dx%d, vsync=%s, fpsLimit=%s, edgeCull=%s",
+            settings = String.format(Locale.ROOT, "puffs=%d, maxDrawn=%d, backend=%s, render=%dx%d, vsync=%s, fpsLimit=%s, edgeCull=%s, edgeThreshold=%.3f",
                 count, maximum, ClientFlashes.effectiveMode(), mc.getWindow().getWidth(), mc.getWindow().getHeight(),
-                mc.options.enableVsync().get(), mc.options.framerateLimit().get(), BigSmokeConfig.SOFT_EDGE_CULL.get());
+                mc.options.enableVsync().get(), mc.options.framerateLimit().get(), BigSmokeConfig.SOFT_EDGE_CULL.get(), BigSmokeConfig.SOFT_EDGE_THRESHOLD.get());
         }
     }
 
