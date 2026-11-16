@@ -6,7 +6,11 @@
   "mixins": [
     "ServerBlockLightMixin",
     "ServerParticleRangeMixin",
-    "ServerLightEngineAccessor"
+    "ServerLightEngineAccessor",
+    "WorldEditBlockRegistryMixin",
+    "WorldEditAdapterMixin",
+    "WorldEditWorldMixin",
+    "WorldEditNativeAccessMixin"
   ],
   "injectors": {
     "defaultRequire": 1
