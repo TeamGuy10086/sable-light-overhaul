@@ -87,8 +87,8 @@ uniform sampler2D sloTankSmokeAtlas;
 uniform sampler2D sloSmokeMask;
 uniform int sloSmokePerformance;
 uniform int sloSmokeEdgeCull;
-const float SLO_SMOKE_EDGE_MIN = 0.012;
-const float SLO_SMOKE_EDGE_FULL = 0.045;
+const float SLO_SMOKE_EDGE_MIN = 0.016;
+const float SLO_SMOKE_EDGE_FULL = 0.050;
 
 void slo_thermal_shape(vec2 p,float seed,vec4 tint);
 
