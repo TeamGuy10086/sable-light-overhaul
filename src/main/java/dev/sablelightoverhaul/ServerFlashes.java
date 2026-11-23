@@ -3,7 +3,6 @@ package dev.sablelightoverhaul;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import rbasamoyai.createbigcannons.CBCCompatTransformers;
 
 public final class ServerFlashes {
@@ -84,7 +83,7 @@ public final class ServerFlashes {
             charge, plumeSize, profile, hasMount, mountSlot);
         // Includes the gunner; independent of CBC's per-player plume suppression.
         for (var player : server.players()) {
-            if (player.distanceToSqr(pos) <= 512.0 * 512.0) PacketDistributor.sendToPlayer(player, payload);
+            if (player.distanceToSqr(pos) <= 512.0 * 512.0) SloNetwork.sendToPlayer(player, payload);
         }
     }
 }

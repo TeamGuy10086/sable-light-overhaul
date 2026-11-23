@@ -177,7 +177,7 @@ public final class ExtraConfig {
   STREAK_TICKS=b.comment("视觉暂留时间（tick），20 tick=1秒；决定亮线记录多长的已飞行轨迹。").defineInRange("persistenceTicks",3.0,0.1,8.0);
   STREAK_LENGTH=b.comment("亮线长度上限（格）；高速弹不会产生无限长光柱。").defineInRange("maxLength",48.0,0.1,256.0);
   STREAK_COLOR=b.comment("亮线颜色，RGB 整数 0xRRGGBB。").defineInRange("color",0xFFE3AC,0,0xFFFFFF);
-  STREAK_MAX=b.comment("同时可见的弹体亮线预算；达到预算时不新增，旧轨迹迅速过期。").defineInRange("maxProjectiles",512,16,4096);
+  STREAK_MAX=b.comment("世界中同时可见的弹体亮线数量上限，包含密集阵曳光。密集阵满额时优先显示最新发射的曳光。").defineInRange("maxProjectiles",1024,16,4096);
   b.pop();
   b.push("trail");
   TRAIL_ENABLED=b.comment("保留的导弹发光烟尾迹/调试效果；不再自动附着到 CBC 炮弹。炮弹使用独立 projectileStreak 分组。").define("enabled",false);

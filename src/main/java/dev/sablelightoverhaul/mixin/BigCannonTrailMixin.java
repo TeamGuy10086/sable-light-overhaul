@@ -26,7 +26,7 @@ public abstract class BigCannonTrailMixin {
             target = "Lnet/minecraft/world/level/Level;addAlwaysVisibleParticle(Lnet/minecraft/core/particles/ParticleOptions;ZDDDDDD)V"))
     private void slo$suppressTrail(Level level, ParticleOptions particle, boolean always,
             double x, double y, double z, double dx, double dy, double dz, Operation<Void> original) {
-        if (particle instanceof TrailSmokeParticleData) {
+        if (particle instanceof TrailSmokeParticleData && (dev.sablelightoverhaul.client.ClientChannels.has(dev.sablelightoverhaul.ShellTrackPayload.TYPE))) {
             return;
         }
         original.call(level, particle, always, x, y, z, dx, dy, dz);

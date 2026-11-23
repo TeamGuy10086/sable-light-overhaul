@@ -22,7 +22,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** WolfMisc's scene layers draw snapshot contacts without instantiating any entities. */
 public final class FarContactLayers {
@@ -66,7 +65,7 @@ public final class FarContactLayers {
         }
         if (ticksUntilRequest == 0 && mc.getConnection().hasChannel(FarContacts.Request.TYPE)) {
             ticksUntilRequest = 10;
-            PacketDistributor.sendToServer(new FarContacts.Request(range));
+            ClientChannels.sendToServer(new FarContacts.Request(range));
         }
     }
 

@@ -1020,7 +1020,7 @@
   "sablelightoverhaul.text.26fdcb1c78185413": "Persistence duration (ticks), 20 ticks = 1 second; determines how much of the flown trajectory the streak records.\n Default: 3.0\n Range: 0.1 ~ 8.0",
   "sablelightoverhaul.text.b3885758a9b6d809": "Maximum streak length (blocks); fast projectiles will not produce infinitely long beams.\n Default: 48.0\n Range: 0.1 ~ 256.0",
   "sablelightoverhaul.text.6eed7153de799f68": "Streak color, RGB integer 0xRRGGBB.\n Default: 16769964\n Range: 0 ~ 16777215",
-  "sablelightoverhaul.text.6c39d76c11a94c41": "Budget for simultaneously visible projectile streaks; when the budget is reached no new ones are added, and old trails expire quickly.\n Default: 512\n Range: 16 ~ 4096",
+  "sablelightoverhaul.text.c4531332c4386a23": "Maximum number of projectile streaks visible in the world at once, including Phalanx tracers. At capacity, the Phalanx prioritizes its newest tracers.\n Default: 1024\n Range: 16 ~ 4096",
   "sablelightoverhaul.text.433a3059ff60701b": "Missile smoke trails",
   "sablelightoverhaul.text.36ac3c3b90424a7a": "Retained glowing missile smoke trail / debug effect; no longer automatically attached to CBC shells. Shells use the separate projectileStreak group.",
   "sablelightoverhaul.text.e8adf3819220ce18": "Color of the trail frames, written as 0xRRGGBB, range 0~0xFFFFFF. Shared by all shell casings, regardless of caliber.\n Default: 16767392\n Range: 0 ~ 16777215",

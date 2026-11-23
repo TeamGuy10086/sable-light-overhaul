@@ -10,7 +10,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import dev.sablelightoverhaul.ProfileRequestPayload;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Binds the cannon form page's menu to its screen.
@@ -31,7 +30,7 @@ public final class ProfileLdlibClient {
      */
     @SubscribeEvent public static void joined(ClientPlayerNetworkEvent.LoggingIn event) {
         try {
-            PacketDistributor.sendToServer(ProfileRequestPayload.INSTANCE);
+            if (ClientChannels.has(dev.sablelightoverhaul.ProfileTablePayload.TYPE)) ClientChannels.sendToServer(ProfileRequestPayload.INSTANCE);
         } catch (RuntimeException failure) {
             // A table that cannot be asked for is not worth a crash on join; the page can ask again later.
         }

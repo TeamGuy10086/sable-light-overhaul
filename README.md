@@ -6,7 +6,9 @@ Lighting, cannon effects and distant rendering for Create: Big Cannons on Minecr
 
 SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights, with dedicated shader adapters and a shader-free lighting backend. Configure effects, devices and budgets through **F9**. Interface labels, item names and descriptions support English and Simplified Chinese.
 
-**Development build 0.1.716.** Public release numbers and Minecraft's internal version can differ.
+**Release 0.3.4 · internal build 0.1.717.** Get the mod JAR on CurseForge and the [Windows shader patchers on GitHub](https://github.com/TeamGuy10086/sable-light-overhaul/releases/tag/v0.3.4).
+
+This release adds surface-specific shell impacts, missile debris and grouped Phalanx tracers. A redstone-powered plasma beam test block demonstrates local lighting and impact effects. Nearby CBC cannon fire and shell explosions can also drive client-side visuals when the corresponding SLO network channels are unavailable.
 
 ## Features
 
@@ -30,8 +32,23 @@ SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights
 - Minecraft **1.21.1**, Java **21**, NeoForge **21.1.228 or newer**, and Create: Big Cannons **5.11.7** with its required dependencies.
 - Install **LDLib2 2.2.17 or newer** for the F9 configuration interface. Integrations such as Voxy, Iris, Sable Hostile and Sable Healthbar require compatible versions; they are not bundled.
 - Install the SLO JAR in `mods`, replacing the older SLO JAR. Do not keep multiple versions together.
-- For server-synchronized features, install a matching SLO version and required dependencies on the dedicated server and clients.
-- Select the appropriate lighting backend in **F9 → Lights → Lighting backend**.
+- Install compatible versions of SLO on both ends to use all synchronized features.
+
+### Playing on a server without SLO
+
+| Feature | What the client can use |
+| --- | --- |
+| Local settings and shaders | F9 client settings and rendering from locally available data still work. Server-reported positions, states and events are unavailable. |
+| Cannon fire, explosions and audio | Nearby CBC cannon and autocannon plumes can drive local muzzle flashes. CBC shell explosions can drive a local shockwave using the power and block list received by the client. Shots outside CBC event range, server-specific dust and distant audio still require synchronization. |
+| Distant projectiles and Phalanx | Distant tracers and mathematical projectiles that require server tracks, flight confirmations or burst messages are unavailable. |
+| Lighting and settings | Registered lights, other players’ flashlights and cannon profile updates require server data. Remote server settings and device edits require their respective channels. |
+| Distant contacts | Markers outside entity tracking range require server snapshots. If only identification or health data is missing, the corresponding details are unavailable. |
+
+A server running this version checks each connection at login. Missing channels and optional channels with incompatible versions or directions trigger a private vanilla chat notice. The server log lists the affected channel IDs. Successfully negotiated channels continue to work. Servers without SLO cannot send this notice. NeoForge still enforces older peers’ required channels, registry compatibility and other mods’ login requirements.
+
+## Lighting backends
+
+Select the appropriate lighting backend in **F9 → Lights → Lighting backend**.
 
 | Backend | Intended use |
 | --- | --- |
@@ -42,7 +59,7 @@ SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights
 
 ## Shader compatibility
 
-Download originals from their authors, then use the matching **Windows x64 offline patcher** from the [releases](https://github.com/TeamGuy10086/sable-light-overhaul/releases). SLO does not distribute complete shader packs.
+Download originals from their authors, then use the matching **Windows x64 offline patcher** from the [releases](https://github.com/TeamGuy10086/sable-light-overhaul/releases/tag/v0.3.4). SLO does not distribute complete shader packs.
 
 | Patcher | Supported original |
 | --- | --- |

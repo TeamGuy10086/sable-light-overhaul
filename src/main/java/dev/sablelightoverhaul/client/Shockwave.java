@@ -2,6 +2,7 @@ package dev.sablelightoverhaul.client;
 
 import dev.sablelightoverhaul.SableLightOverhaul;
 import dev.sablelightoverhaul.ShockwavePayload;
+import dev.sablelightoverhaul.lighting.LightingCommon;
 import dev.sablelightoverhaul.api.EffectApi;
 import dev.sablelightoverhaul.effects.DefaultSpecs;
 import dev.sablelightoverhaul.effects.EffectBus;
@@ -116,6 +117,24 @@ public final class Shockwave {
  }
 
  /** The receiver the mod's network hook calls; no client class is resolved on a dedicated server. */
+ public static void localShell(ClientLevel level, net.minecraft.world.level.Explosion explosion, boolean plume) {
+  if (level != Minecraft.getInstance().level || ClientChannels.has(ShockwavePayload.TYPE)
+      || !ExtraConfig.SHOCKWAVE_ENABLED.get()) return;
+  var center = explosion.center();
+  float power = explosion.radius();
+  var blocks = explosion.getToBlow();
+  if (!Float.isFinite(power) || power <= 0 || (power < LightingCommon.SHOCKWAVE_MIN_POWER.getDefault()
+      && blocks.size() < LightingCommon.EXPL_MIN_BLOCKS.getDefault())) return;
+  var reach = ShockwavePayload.measure(center, power, blocks);
+  var above = net.minecraft.core.BlockPos.containing(center).above();
+  var blastClass = plume ? ShockwavePayload.BlastClass.GROUND
+      : level.getBlockState(above).isSolidRender(level, above) ? ShockwavePayload.BlastClass.BURIED
+      : ShockwavePayload.BlastClass.AIR;
+  receive(new ShockwavePayload(level.dimension().location(), center.x, center.y, center.z, power,
+      ShockwavePayload.solidity(power, reach), dev.sablelightoverhaul.effects.ImpactClassifier.tierOf(power, LightingCommon.EXPL_YIELD_TIERS.getDefault()),
+      reach, blocks.size(), blastClass, -1));
+ }
+
  public static void receive(ShockwavePayload payload){
   ClientLevel level=Minecraft.getInstance().level;
   if(level==null)return;

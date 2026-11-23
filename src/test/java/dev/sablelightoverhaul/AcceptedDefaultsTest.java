@@ -138,7 +138,7 @@ class AcceptedDefaultsTest {
             expected.put("projectileStreak.enabled",true);expected.put("projectileStreak.width",.035);
             expected.put("projectileStreak.autocannonWidth",.05);expected.put("projectileStreak.autocannonMinPixels",1.25);
             expected.put("projectileStreak.persistenceTicks",3.0);expected.put("projectileStreak.maxLength",48.0);
-            expected.put("projectileStreak.color",0xFFE3AC);expected.put("projectileStreak.maxProjectiles",512);
+            expected.put("projectileStreak.color",0xFFE3AC);expected.put("projectileStreak.maxProjectiles",1024);
         }else{expected.put("farContacts.enabled",false);expected.remove("voxy.saveChunks");expected.remove("voxy.saveIntervalTicks");expected.put("flakCone.range",24.0);expected.put("flakCone.damageScale",1.0);}
         var generated=CommentedConfig.inMemory();spec.correct(generated);
         assertTrue(spec.isCorrect(generated));

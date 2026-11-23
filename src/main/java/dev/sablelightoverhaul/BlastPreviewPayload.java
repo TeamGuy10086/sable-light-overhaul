@@ -7,7 +7,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public record BlastPreviewPayload(ResourceLocation dimension, Kind kind, Vec3 origin, Vec3 direction,
                                   float power, int dustColor) implements CustomPacketPayload {
@@ -62,7 +61,7 @@ public record BlastPreviewPayload(ResourceLocation dimension, Kind kind, Vec3 or
         double rangeSquared = visualRangeSquared();
         for (var viewer : level.players()) {
             if (viewer.distanceToSqr(origin) <= rangeSquared && viewer.connection.hasChannel(TYPE)) {
-                PacketDistributor.sendToPlayer(viewer, payload);
+                SloNetwork.sendToPlayer(viewer, payload);
             }
         }
     }
@@ -79,7 +78,7 @@ public record BlastPreviewPayload(ResourceLocation dimension, Kind kind, Vec3 or
             double rangeSquared = visualRangeSquared();
             for (var viewer : level.players()) {
                 if (Math.min(viewer.distanceToSqr(center), viewer.distanceToSqr(origin)) <= rangeSquared && viewer.connection.hasChannel(TYPE)) {
-                    PacketDistributor.sendToPlayer(viewer, packet);
+                    SloNetwork.sendToPlayer(viewer, packet);
                 }
             }
         }
@@ -115,7 +114,7 @@ public record BlastPreviewPayload(ResourceLocation dimension, Kind kind, Vec3 or
             var payload = new Approach(level.dimension().location(), end, motion);
             for (var viewer : level.players()) {
                 if (viewer.distanceToSqr(end) <= 256 * 256 && viewer.connection.hasChannel(TYPE)) {
-                    PacketDistributor.sendToPlayer(viewer, payload);
+                    SloNetwork.sendToPlayer(viewer, payload);
                 }
             }
         }

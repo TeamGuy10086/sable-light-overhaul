@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -33,7 +34,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -90,6 +90,7 @@ public final class LightSourceLdlib {
  public static void register(IEventBus bus){MENUS.register(bus);}
  /** Open the page for one source. @returns false when there is nothing to open, so the caller can fall back. */
  public static boolean open(Player player,BlockPos pos){
+  if (player instanceof net.minecraft.server.level.ServerPlayer remote && !remote.connection.hasChannel(dev.sablelightoverhaul.LightSourceEditPayload.TYPE)) return false;
   // A source whose block we never replaced has a page too. Requiring our own block here is what used to
   // make such a lamp's colour, radius and brightness unreachable: the page is the only place they live.
   var level=player.level();
@@ -408,12 +409,12 @@ public final class LightSourceLdlib {
    // The page said it saved and the lamp never changed; this says whether the page sent anything at all.
    com.mojang.logging.LogUtils.getLogger().info(
            "Sable Light Overhaul page send: field={} value={} at {}",field,value,pos.toShortString());
-   PacketDistributor.sendToServer(new LightSourceEditPayload(pos,LightSourceServer.rememberedId(pos),field,value,""));
+   ClientChannels.sendToServer(new LightSourceEditPayload(pos,LightSourceServer.rememberedId(pos),field,value,""));
   }
  }
  /** The same, for the one field whose value is text. */
  private static void send(Player owner,BlockPos pos,String field,double value,String text){
-  if(owner.level().isClientSide)PacketDistributor.sendToServer(new LightSourceEditPayload(pos,LightSourceServer.rememberedId(pos),field,value,text));
+  if(owner.level().isClientSide)ClientChannels.sendToServer(new LightSourceEditPayload(pos,LightSourceServer.rememberedId(pos),field,value,text));
  }
  /**
   * The shadow cones, as the player writes them: {@code {h1,h2,v1,v2};{...}}, degrees, empty for every

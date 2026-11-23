@@ -11,6 +11,25 @@ public final class HealthbarFlightPhase {
     private static final MethodHandle PHASE = find(FlightSnapshot.class, "phaseFifths", int.class);
     private static final MethodHandle VISIBLE = find(ClientFlightFrame.class, "visible", boolean.class, double.class);
 
+    private static final MethodHandle GROUPED = groupedQuery();
+
+    private static MethodHandle groupedQuery() {
+        try {
+            return MethodHandles.publicLookup().findStatic(dev.sablehealthbar.api.flight.FlightApi.class,
+                "isGroupedAutocannonAp", MethodType.methodType(boolean.class, net.minecraft.server.level.ServerLevel.class,
+                    dev.sablehealthbar.api.flight.ProjectileId.class));
+        } catch (NoSuchMethodException | IllegalAccessException unavailable) {
+            return null;
+        }
+    }
+
+    static boolean isGrouped(net.minecraft.server.level.ServerLevel level, FlightSnapshot flight) {
+        if (GROUPED == null) return false;
+        try { return (boolean)GROUPED.invokeExact(level, flight.id()); }
+        catch (RuntimeException | Error ex) { throw ex; }
+        catch (Throwable ex) { throw new IllegalStateException(ex); }
+    }
+
     private HealthbarFlightPhase() {}
 
     private static MethodHandle find(Class<?> owner, String name, Class<?> result, Class<?>... arguments) {

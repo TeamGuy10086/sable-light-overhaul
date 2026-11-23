@@ -4,6 +4,8 @@
   "package": "dev.sablelightoverhaul.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "SloNegotiationMixin",
+    "SloChannelLookupMixin",
     "BlastDamageTrackingMixin",
     "BigCannonMixin",
     "AutocannonMixin",
@@ -16,6 +18,7 @@
     "LightEngineAccessor",
     "BlockLightMixin",
     "BigPlumeMixin",
+    "ClientShellImpactMixin",
     "AutocannonPlumeSuppressMixin",
     "AutocannonTrailMixin",
     "BigCannonTrailMixin",

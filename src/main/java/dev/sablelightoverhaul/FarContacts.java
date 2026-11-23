@@ -16,7 +16,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Dedicated-server snapshots only. Never loads a chunk or starts tracking a vanilla entity. */
 public final class FarContacts {
@@ -160,9 +159,9 @@ public final class FarContacts {
                         && entity.getType().getCategory()!=MobCategory.MONSTER,
                 healthIncluded ? Health.capture(entity) : null)).toList();
         var snapshot=new Snapshot(level.dimension().location(),contacts);
-        if (healthIncluded) PacketDistributor.sendToPlayer(player, new HealthSnapshot(snapshot));
-        else if (identified) PacketDistributor.sendToPlayer(player, new IdentifiedSnapshot(snapshot));
-        else PacketDistributor.sendToPlayer(player, snapshot);
+        if (healthIncluded) SloNetwork.sendToPlayer(player, new HealthSnapshot(snapshot));
+        else if (identified) SloNetwork.sendToPlayer(player, new IdentifiedSnapshot(snapshot));
+        else SloNetwork.sendToPlayer(player, snapshot);
     }
 
     private static ResourceLocation id(String path) {

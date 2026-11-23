@@ -8,6 +8,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProjectileStreakContinuityTest {
+    @Test void largeServerTickPreservesEveryFrameAndTickTransition() {
+        long start = 308_673_963L;
+        for (long tick = start; tick < start + 64; tick++) {
+            double previous = ProjectileStreaks.interpolatedTick(tick, 0);
+            assertEquals((double) (tick - 1), previous);
+            for (int quarter = 1; quarter <= 4; quarter++) {
+                double current = ProjectileStreaks.interpolatedTick(tick, quarter / 4f);
+                assertEquals(0.25, current - previous);
+                previous = current;
+            }
+            assertEquals(previous, ProjectileStreaks.interpolatedTick(tick + 1, 0));
+        }
+    }
+
     @Test void firstSegmentStartsAtItsPhaseAndClampsAtTheConfirmedEndpoint() {
         for (int phase = 0; phase <= 4; phase++) {
             var start = Vec3.ZERO;

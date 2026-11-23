@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.SloNetwork;
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import dev.sablelightoverhaul.ProfileChangedPayload;
 import dev.sablelightoverhaul.ProfileTablePayload;
@@ -14,7 +15,6 @@ import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Handing the per-cannon table to clients, and telling them when it changes.
@@ -114,7 +114,7 @@ public final class ProfileSync {
             var values = ProfileData.get(level).store().allFor(key).get(kind);
             var payload = new ProfileTablePayload(List.of(new ProfileTablePayload.Cannon(key, kind,
                     values == null ? Map.of() : Map.copyOf(values))), presets(), false, MountIndex.snapshot());
-            for (var player : level.players()) PacketDistributor.sendToPlayer(player, payload);
+            for (var player : level.players()) SloNetwork.sendToPlayer(player, payload);
         } catch (RuntimeException failure) {
             com.mojang.logging.LogUtils.getLogger().warn(
                     "Sable Light Overhaul: could not announce a cannon change ({})", failure.toString());
@@ -139,7 +139,7 @@ public final class ProfileSync {
                         server.getGameProfile().getName(), sent.presets().size(), sent.cannons().size(),
                         sent.mounts().size());
             }
-            PacketDistributor.sendToPlayer(server, sent);
+            SloNetwork.sendToPlayer(server, sent);
         } catch (RuntimeException failure) {
             com.mojang.logging.LogUtils.getLogger().warn(
                     "Sable Light Overhaul: could not send the cannon table ({})", failure.toString());
@@ -149,7 +149,7 @@ public final class ProfileSync {
     /** Tells everyone in the level about one changed value. Only called when something actually changed. */
     public static void broadcast(ServerLevel level, ProfileChangedPayload payload) {
         try {
-            for (var player : level.players()) PacketDistributor.sendToPlayer(player, payload);
+            for (var player : level.players()) SloNetwork.sendToPlayer(player, payload);
         } catch (RuntimeException failure) {
             com.mojang.logging.LogUtils.getLogger().warn(
                     "Sable Light Overhaul: could not broadcast a cannon change ({})", failure.toString());

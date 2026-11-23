@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.*;
 public abstract class BigPlumeMixin extends NoRenderParticle {
  @Shadow @Final private Vec3 direction;
  @Shadow @Final private float power;
+ @Shadow @Final private float size;
  @Unique private boolean slo$owned;
  @Unique private int slo$count,slo$release;
  @Unique private Vec3 slo$origin;
@@ -30,6 +31,8 @@ if(slo$kind<0){
     int slo$shotKind=ClientFlashes.STORE.plumeKind(x,y,z,slo$aim.x,slo$aim.y,slo$aim.z,level.getGameTime());
     if(slo$shotKind<0) slo$shotKind=dev.sablelightoverhaul.client.PlumeSource.tankCannon((ClientLevel)level,x,y,z)?2:0;
     slo$kind=slo$shotKind;
+    Vec3 origin = new Vec3(x, y, z).add(slo$aim.scale(1.6));
+    ClientFlashes.localMuzzle((ClientLevel) level, origin, slo$aim, slo$kind, power, Math.max(1, size));
 }
 // Decide once per emitter. Successful takeover replaces children, including at the live budget cap.
 if(age==0&&slo$kind==0&&Float.isFinite(power)&&power>3&&dev.sablelightoverhaul.client.BigSmokeParticle.available()){

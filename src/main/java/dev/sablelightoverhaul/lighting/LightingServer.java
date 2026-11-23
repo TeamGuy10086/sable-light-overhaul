@@ -1,4 +1,5 @@
 package dev.sablelightoverhaul.lighting;
+import dev.sablelightoverhaul.SloNetwork;
 import java.util.*;
 import dev.sablelightoverhaul.LocalizedText;
 import dev.sablelightoverhaul.SableLightOverhaul;
@@ -11,7 +12,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 @EventBusSubscriber(modid=SableLightOverhaul.ID)
 public final class LightingServer {
@@ -147,7 +147,7 @@ var appearance=!e.spotlight()&&level.getBlockEntity(pos) instanceof LightSourceB
     mine=filtered;
    }
    var packet=new SourcePayload(level.dimension().location(),List.copyOf(mine));
-   if(!packet.equals(sent.get(player))){PacketDistributor.sendToPlayer(player,packet);sent.put(player,packet);}
+   if(!packet.equals(sent.get(player))){SloNetwork.sendToPlayer(player,packet);sent.put(player,packet);}
   }
  }
  /** Signal entering the lamp through one face: the neighbour in that direction must emit toward us. */

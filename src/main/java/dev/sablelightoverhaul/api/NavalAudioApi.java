@@ -1,10 +1,10 @@
 package dev.sablelightoverhaul.api;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.NavalSoundPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Optional server-thread integration for Sable Hostile's existing report dispatcher. */
 public final class NavalAudioApi {
@@ -20,7 +20,7 @@ public final class NavalAudioApi {
         int limit = NavalSoundPayload.REPORT_RANGE + 16;
         if (profile == null || !NavalSoundPayload.validPosition(muzzle) || viewer.distanceToSqr(muzzle) > limit * limit
                 || !viewer.connection.hasChannel(NavalSoundPayload.TYPE)) return false;
-        PacketDistributor.sendToPlayer(viewer, new NavalSoundPayload(viewer.serverLevel().dimension().location(),
+        SloNetwork.sendToPlayer(viewer, new NavalSoundPayload(viewer.serverLevel().dimension().location(),
             muzzle, NavalSoundPayload.Kind.REPORT, profile));
         return true;
     }

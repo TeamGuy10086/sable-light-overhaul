@@ -94,6 +94,7 @@ public final class SableLightOverhaul {
     /** The lamps of the players near this one, so their beams are drawn here too. */
     public static Consumer<FlashlightPeersPayload> flashlightPeersReceiver = payload -> {};
     /** Where the tracer shells are, so the client can draw their trails itself. */
+    public static Consumer<PhalanxBurstPayload> phalanxBurstReceiver = payload -> {};
     public static Consumer<AutocannonTrackPayload> autocannonTrackReceiver = payload -> {};
     public static Consumer<AutocannonTrackPayload.Phased> phasedAutocannonTrackReceiver = payload -> {};
     public static Consumer<AutocannonFlightPayload> autocannonFlightReceiver = payload -> {};
@@ -144,15 +145,14 @@ public final class SableLightOverhaul {
         // Protocol 46 adds carrier UUIDs for optional per-shot mathematical-flight deduplication.
         // Protocol 45 adds the bounded remote-autocannon position channel.
         // Protocol 37: body-local hull surface anchors and attachment controls.
-        event.registrar("46").playToClient(FlarePayload.TYPE,FlarePayload.CODEC,
+        event.registrar("46").optional().playToClient(FlarePayload.TYPE,FlarePayload.CODEC,
             (payload,context)->context.enqueueWork(()->flareReceiver.accept(payload)));
-        event.registrar("46").playToClient(GroundDustFieldPayload.TYPE,GroundDustFieldPayload.CODEC,
+        event.registrar("46").optional().playToClient(GroundDustFieldPayload.TYPE,GroundDustFieldPayload.CODEC,
             (payload,context)->context.enqueueWork(()->groundFieldReceiver.accept(payload)));
-        event.registrar("46").playToClient(TankAfterSmokePayload.TYPE,TankAfterSmokePayload.CODEC,
+        event.registrar("46").optional().playToClient(TankAfterSmokePayload.TYPE,TankAfterSmokePayload.CODEC,
             (payload,context)->context.enqueueWork(()->afterSmokeReceiver.accept(payload)));
-        // The channel version is the mod's network version, and it moves whenever any payload's shape
-        // changes. A mismatch is refused at join with the two numbers named, which is the whole point: every
-        // change below would otherwise decode cleanly into nonsense.
+        // Each channel has its own wire version, which must change when its payload shape
+        // changes. Only mutually compatible optional channels are used.
         //
         // Chronology, most recent first:
         //   34  Ground dust carries source material state/position for client particle-texture tint.
@@ -165,9 +165,8 @@ public final class SableLightOverhaul {
         //       steps than one fifteenth of its range.
         //   17  FlashPayload gained the per-cannon form: fourteen extra floats.
         //   15  SourcePayload gained the light style (how it is lit, which faces it emits through).
-        // The numbers before 15 are in the old handoff; do not add to this list without bumping the literal
-        // on every registrar() call below.
-        event.registrar("46").playToClient(CannonDustPayload.TYPE, CannonDustPayload.CODEC,
+        // Earlier revisions shared a version number across several payloads.
+        event.registrar("46").optional().playToClient(CannonDustPayload.TYPE, CannonDustPayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> dustReceiver.accept(payload)));
         event.registrar("46").optional().playToClient(AutocannonHazePayload.TYPE, AutocannonHazePayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> autocannonHazeReceiver.accept(payload)));
@@ -175,19 +174,21 @@ public final class SableLightOverhaul {
             (payload, context) -> context.enqueueWork(() -> navalSoundReceiver.accept(payload)));
         event.registrar("1").optional().playToClient(HostileSmokePayload.TYPE, HostileSmokePayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> hostileSmokeReceiver.accept(payload)));
-        event.registrar("46").playToClient(FlashPayload.TYPE, FlashPayload.CODEC,
+        event.registrar("46").optional().playToClient(FlashPayload.TYPE, FlashPayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> receiver.accept(payload)));
-        event.registrar("46").playToClient(dev.sablelightoverhaul.lighting.SourcePayload.TYPE,dev.sablelightoverhaul.lighting.SourcePayload.CODEC,(payload,context)->context.enqueueWork(()->sourceReceiver.accept(payload)));
+        event.registrar("46").optional().playToClient(dev.sablelightoverhaul.lighting.SourcePayload.TYPE,dev.sablelightoverhaul.lighting.SourcePayload.CODEC,(payload,context)->context.enqueueWork(()->sourceReceiver.accept(payload)));
         // The flashlight's settings are the server's to decide (they are operator-gated), so the client
         // is told what to draw rather than reading a config of its own.
-        event.registrar("46").playToClient(FlashlightStatePayload.TYPE,FlashlightStatePayload.CODEC,
+        event.registrar("46").optional().playToClient(FlashlightStatePayload.TYPE,FlashlightStatePayload.CODEC,
             (payload,context)->context.enqueueWork(()->flashlightReceiver.accept(payload)));
         // The neighbours' lamps: settings only, since where they are and where they look already arrive
         // with their entities. The server sends the whole set, so a peer who switches off disappears.
-        event.registrar("46").playToClient(FlashlightPeersPayload.TYPE,FlashlightPeersPayload.CODEC,
+        event.registrar("46").optional().playToClient(FlashlightPeersPayload.TYPE,FlashlightPeersPayload.CODEC,
             (payload,context)->context.enqueueWork(()->flashlightPeersReceiver.accept(payload)));
         // The trail's path, not the trail itself: the client draws the ribbon from these positions.
-        event.registrar("47").playToClient(AutocannonTrackPayload.TYPE,AutocannonTrackPayload.CODEC,
+        event.registrar("1").optional().playToClient(PhalanxBurstPayload.TYPE, PhalanxBurstPayload.CODEC,
+            (payload,context)->context.enqueueWork(()->phalanxBurstReceiver.accept(payload)));
+        event.registrar("47").optional().playToClient(AutocannonTrackPayload.TYPE,AutocannonTrackPayload.CODEC,
             (payload,context)->context.enqueueWork(()->autocannonTrackReceiver.accept(payload)));
         event.registrar("1").optional().playToClient(AutocannonTrackPayload.Phased.TYPE,AutocannonTrackPayload.Phased.CODEC,
             (payload,context)->context.enqueueWork(()->phasedAutocannonTrackReceiver.accept(payload)));
@@ -201,15 +202,15 @@ public final class SableLightOverhaul {
             (payload,ctx)->ctx.enqueueWork(()->hostileShellReceiver.accept(payload)));
         event.registrar("1").optional().playToClient(HostileMathFlightPayload.TYPE,HostileMathFlightPayload.CODEC,
             (payload,ctx)->ctx.enqueueWork(()->hostileMathReceiver.accept(payload)));
-        event.registrar("46").playToClient(ShellTrackPayload.TYPE,ShellTrackPayload.CODEC,
+        event.registrar("46").optional().playToClient(ShellTrackPayload.TYPE,ShellTrackPayload.CODEC,
             (payload,context)->context.enqueueWork(()->shellTrackReceiver.accept(payload)));
         // What an explosion was, not the explosion particles: the client generates the shockwave from
         // these measurements, which is the same split the trail uses.
-        event.registrar("46").playToClient(ShockwavePayload.TYPE,ShockwavePayload.CODEC,
+        event.registrar("46").optional().playToClient(ShockwavePayload.TYPE,ShockwavePayload.CODEC,
             (payload,context)->context.enqueueWork(()->shockwaveReceiver.accept(payload)));
         // The vortex generator's registered blocks: the server owns which blocks they are, the client
         // owns drawing them, and the wand in the player's hand is what says when to send.
-        event.registrar("46").playToClient(dev.sablelightoverhaul.lighting.VortexMarksPayload.TYPE,
+        event.registrar("46").optional().playToClient(dev.sablelightoverhaul.lighting.VortexMarksPayload.TYPE,
             dev.sablelightoverhaul.lighting.VortexMarksPayload.CODEC,
             (payload,context)->context.enqueueWork(()->vortexReceiver.accept(payload)));
         // Dedicated-server radar snapshots negotiate independently of the existing required channels.
@@ -226,66 +227,66 @@ public final class SableLightOverhaul {
         // The per-cannon table: asked for once by a client when it joins, answered with everything, and after
         // that only changes travel. The catalogue is not carried -- both sides derive it from the same code --
         // so the table is the server's presets plus the values it holds, which is what a page reads.
-        event.registrar("46").playToServer(ProfileRequestPayload.TYPE,ProfileRequestPayload.CODEC,
+        event.registrar("46").optional().playToServer(ProfileRequestPayload.TYPE,ProfileRequestPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.ProfileSync.send(context.player())));
-        event.registrar("46").playToClient(ProfileTablePayload.TYPE,ProfileTablePayload.CODEC,
+        event.registrar("46").optional().playToClient(ProfileTablePayload.TYPE,ProfileTablePayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.client.ProfileCache.accept(payload)));
-        event.registrar("46").playToClient(ProfileChangedPayload.TYPE,ProfileChangedPayload.CODEC,
+        event.registrar("46").optional().playToClient(ProfileChangedPayload.TYPE,ProfileChangedPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.client.ProfileCache.apply(payload)));
         // A generator's page, pasted back in as values: the same parse-on-the-client shape as the cannon's,
         // and the same one-value-at-a-time validation on the way in.
-        event.registrar("46").playToServer(GeneratorImportPayload.TYPE,GeneratorImportPayload.CODEC,
+        event.registrar("46").optional().playToServer(GeneratorImportPayload.TYPE,GeneratorImportPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.GeneratorServer
                 .applyImport(context.player(),payload)));
         // A cannon's form: one validated write per edit, and a pasted form as one message whose every type
         // is checked against the cannon that is actually there before anything is stored.
-        event.registrar("46").playToServer(ProfileEditPayload.TYPE,ProfileEditPayload.CODEC,
+        event.registrar("46").optional().playToServer(ProfileEditPayload.TYPE,ProfileEditPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.ProfileServer
                 .applyEdit(context.player(),payload)));
         // Forgetting values: what the page does when a single row, or a whole page, goes back on its preset.
-        event.registrar("46").playToServer(ProfileClearPayload.TYPE,ProfileClearPayload.CODEC,
+        event.registrar("46").optional().playToServer(ProfileClearPayload.TYPE,ProfileClearPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.ProfileServer
                 .applyClear(context.player(),payload)));
-        event.registrar("46").playToServer(ProfileImportPayload.TYPE,ProfileImportPayload.CODEC,
+        event.registrar("46").optional().playToServer(ProfileImportPayload.TYPE,ProfileImportPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.ProfileServer
                 .applyImport(context.player(),payload)));
-        event.registrar("46").playToServer(FlashlightEditPayload.TYPE,FlashlightEditPayload.CODEC,
+        event.registrar("46").optional().playToServer(FlashlightEditPayload.TYPE,FlashlightEditPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.FlashlightSettings
                 .setNumber(context.player(),payload.field(),payload.number())));
         // A configuration page edits the block entity through one validated write per field.
-        event.registrar("46").playToServer(dev.sablelightoverhaul.lighting.GeneratorEditPayload.TYPE,dev.sablelightoverhaul.lighting.GeneratorEditPayload.CODEC,
+        event.registrar("46").optional().playToServer(dev.sablelightoverhaul.lighting.GeneratorEditPayload.TYPE,dev.sablelightoverhaul.lighting.GeneratorEditPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.GeneratorServer.applyEdit(context.player(),payload)));
         // A registered light source's page: one validated write per field, the same shape as the
         // generator's. It is a block's settings, so the position travels; the server resolves it against
         // the level the editing player is in, which is what lets a lamp on a physics body work exactly
         // like one on the ground.
-        event.registrar("46").playToServer(LightSourceEditPayload.TYPE,LightSourceEditPayload.CODEC,
+        event.registrar("46").optional().playToServer(LightSourceEditPayload.TYPE,LightSourceEditPayload.CODEC,
             (payload,context)->context.enqueueWork(()->dev.sablelightoverhaul.lighting.LightSourceServer
                 .set(payload.pos(),payload.id(),payload.field(),payload.number(),payload.text(),context.player())));
         // The server configuration page. The server spec is readable only here; the client asks for a
         // catalogue, gets one snapshot, and writes one field per edit. Every branch checks the operator bit
         // again -- hiding the button on the client is convenience, not security.
-        event.registrar("46").playToServer(ServerConfigRequestPayload.TYPE, ServerConfigRequestPayload.CODEC,
+        event.registrar("46").optional().playToServer(ServerConfigRequestPayload.TYPE, ServerConfigRequestPayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> {
                 var player = context.player();
                 if (!player.hasPermissions(2)) {
-                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+                    SloNetwork.sendToPlayer(
                             (net.minecraft.server.level.ServerPlayer) player, new ServerConfigDeniedPayload());
                     return;
                 }
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+                SloNetwork.sendToPlayer(
                         (net.minecraft.server.level.ServerPlayer) player,
                         new ServerConfigCatalogPayload(ServerConfigService.snapshot(), true));
             }));
-        event.registrar("46").playToClient(ServerConfigCatalogPayload.TYPE, ServerConfigCatalogPayload.CODEC,
+        event.registrar("46").optional().playToClient(ServerConfigCatalogPayload.TYPE, ServerConfigCatalogPayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> serverConfigReceiver.accept(payload)));
-        event.registrar("46").playToClient(ServerConfigDeniedPayload.TYPE, ServerConfigDeniedPayload.CODEC,
+        event.registrar("46").optional().playToClient(ServerConfigDeniedPayload.TYPE, ServerConfigDeniedPayload.CODEC,
             (payload, context) -> context.enqueueWork(serverConfigDenied));
-        event.registrar("46").playToServer(ServerConfigEditPayload.TYPE, ServerConfigEditPayload.CODEC,
+        event.registrar("46").optional().playToServer(ServerConfigEditPayload.TYPE, ServerConfigEditPayload.CODEC,
             (payload, context) -> context.enqueueWork(() -> {
                 var player = context.player();
                 if (!player.hasPermissions(2)) {
-                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+                    SloNetwork.sendToPlayer(
                             (net.minecraft.server.level.ServerPlayer) player, new ServerConfigDeniedPayload());
                     return;
                 }

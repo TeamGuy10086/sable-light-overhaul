@@ -182,6 +182,7 @@ public class ConfigWindow extends ModularUIScreen {
                 l.width(94.0F);
                 l.height(10.0F);
             });
+            server.setActive(ConfigKey.canRequestServerConfig());
             server.setOnClick(event -> {
                 server.setActive(false);
                 server.setText(Component.translatable("sablelightoverhaul.config.serverRequesting"));

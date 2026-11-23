@@ -50,6 +50,7 @@ public final class ProjectileStreaks {
     static void clientTick(ClientLevel level, boolean running) {
         if(level!=null&&running)visualTick++;
         maintain(level);
+        if (running || level == null) PhalanxBurstClient.tick(level, visualTick);
         if (flywheelLoaded()) FlywheelTracers.updateLevel(level, hasInstancedCandidates());
     }
 
@@ -57,12 +58,16 @@ public final class ProjectileStreaks {
         for (Streak streak : ACTIVE.values()) if (streak.autocannon && !streak.flak) return true;
         return false;
     }
+    static int freeSlots() { return ExtraConfig.STREAK_MAX.get() - ACTIVE.size(); }
     static long visualTick(){return visualTick;}
+    static double interpolatedTick(long tick, float partial) {
+        return tick - 1.0 + Math.clamp(partial, 0, 1);
+    }
     static void beginFrame(ClientLevel level,float partial){
         frameNumber++;
         previousFrameTime=frameLevel==level?frameTime:Double.NaN;
         frameLevel=level;
-        frameTime=level==null?Double.NaN:level.getGameTime()-1+Math.clamp(partial,0,1);
+        frameTime=level==null?Double.NaN:interpolatedTick(level.getGameTime(), partial);
         if(frameTime<previousFrameTime)previousFrameTime=Double.NaN;
     }
     public static void maintain(ClientLevel level) {
@@ -346,7 +351,7 @@ public final class ProjectileStreaks {
         }
         @Override public void remove(){super.remove();ACTIVE.remove(id,this);}
         private double renderClock(float partial){
-            double time=visualTick-1+partial;
+            double time=interpolatedTick(visualTick, partial);
             if(steps.isEmpty())return time;
             if(!math){
                 boolean hold=!finished&&(autocannon||measured)&&!Minecraft.getInstance().hasSingleplayerServer();

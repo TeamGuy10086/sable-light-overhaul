@@ -11,7 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class CannonDustEvents {
     private static final Map<ServerLevel, Map<String, Long>> LAST = new WeakHashMap<>();
@@ -62,12 +61,12 @@ public final class CannonDustEvents {
         var typedHaze = weapon == null ? null : HostileSmokePayload.thin(weapon, event);
         for (var player : viewers) {
             if (typedHaze != null && player.connection.hasChannel(HostileSmokePayload.TYPE)) {
-                PacketDistributor.sendToPlayer(player, typedHaze);
+                SloNetwork.sendToPlayer(player, typedHaze);
                 handled.accept(player);
                 continue;
             }
             if (typedHaze != null && !LightingCommon.AUTO_HAZE_ENABLED.get()) continue;
-            PacketDistributor.sendToPlayer(player,
+            SloNetwork.sendToPlayer(player,
                 softHaze != null && player.connection.hasChannel(AutocannonHazePayload.TYPE) ? softHaze : event);
         }
     }

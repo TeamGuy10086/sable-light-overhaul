@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -25,7 +26,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -57,6 +57,7 @@ public final class GeneratorLdlib {
   * @returns false when the block entity is gone, so the caller can fall back.
   */
  public static boolean open(Player player,BlockPos pos){
+  if (player instanceof net.minecraft.server.level.ServerPlayer remote && !remote.connection.hasChannel(dev.sablelightoverhaul.lighting.GeneratorEditPayload.TYPE)) return false;
   if(!(player.level().getBlockEntity(pos) instanceof GeneratorBlockEntity))return false;
   player.openMenu(new Holder(player,pos),buffer->buffer.writeBlockPos(pos));
   return true;
@@ -231,7 +232,7 @@ public final class GeneratorLdlib {
   var values=new java.util.LinkedHashMap<String,String>();
   export.byType().values().forEach(values::putAll);
   if(values.isEmpty()){ tell(net.minecraft.network.chat.Component.translatable("sablelightoverhaul.generator.nothingUsable")); return; }
-  PacketDistributor.sendToServer(new dev.sablelightoverhaul.GeneratorImportPayload(generator.getBlockPos(),values));
+  ClientChannels.sendToServer(new dev.sablelightoverhaul.GeneratorImportPayload(generator.getBlockPos(),values));
   tell(net.minecraft.network.chat.Component.translatable("sablelightoverhaul.generator.imported",values.size(),export.modVersion(),export.unknownLines().size()));
  }
  /** One field, read the way its own widget reads it. */
@@ -265,7 +266,7 @@ public final class GeneratorLdlib {
  }
  /** Edits only originate from a player using the page, which is always the client side. */
  private static void send(Player owner,GeneratorEditPayload payload){
-  if(owner.level().isClientSide)PacketDistributor.sendToServer(payload);
+  if(owner.level().isClientSide)ClientChannels.sendToServer(payload);
  }
  // ------------------------------------------------------------------ scoped config adapter
  /**

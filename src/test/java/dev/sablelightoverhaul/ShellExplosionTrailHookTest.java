@@ -26,13 +26,17 @@ class ShellExplosionTrailHookTest {
    new ClassReader(jar.getInputStream(shell)).accept(c,0);
    var spawn=c.methods.stream().filter(m->m.name.equals("spawnParticles")).findFirst().orElseThrow();
    var effects=new java.util.ArrayList<String>();
+   int particleCalls=0;
    for(var instruction:spawn.instructions){
+    if(instruction instanceof MethodInsnNode call && call.owner.equals("net/minecraft/world/level/Level")
+            && call.name.equals("addParticle") && call.desc.equals("(Lnet/minecraft/core/particles/ParticleOptions;ZDDDDDD)V")) particleCalls++;
     if(instruction instanceof TypeInsnNode allocation && allocation.getOpcode()==Opcodes.NEW){
      effects.add(allocation.desc.substring(allocation.desc.lastIndexOf('/')+1));
     }
    }
    assertTrue(effects.contains("ShellBlastWaveEffectParticleData"));
-   assertTrue(effects.contains("ShellExplosionCloudParticleData"));
+   assertEquals(1, java.util.Collections.frequency(effects,"ShellExplosionCloudParticleData"));
+   assertEquals(2, particleCalls, "local shockwave hook sees the blast emitter and the single cloud");
   }
  }
 }

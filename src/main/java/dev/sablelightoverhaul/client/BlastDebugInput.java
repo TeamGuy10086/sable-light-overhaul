@@ -8,7 +8,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = SableLightOverhaul.ID, value = Dist.CLIENT)
 public final class BlastDebugInput {
@@ -24,6 +23,6 @@ public final class BlastDebugInput {
             || !(player.getMainHandItem().getItem() instanceof BlastDebugItem)
             || connection == null || !connection.hasChannel(BlastPreviewPayload.Adjust.TYPE) || delta == 0) return;
         event.setCanceled(true);
-        PacketDistributor.sendToServer(new BlastPreviewPayload.Adjust(mc.options.keyShift.isDown(), delta > 0));
+        ClientChannels.sendToServer(new BlastPreviewPayload.Adjust(mc.options.keyShift.isDown(), delta > 0));
     }
 }

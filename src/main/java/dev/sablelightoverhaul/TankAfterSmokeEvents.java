@@ -5,7 +5,6 @@ import dev.sablelightoverhaul.lighting.SourceAnchor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import rbasamoyai.createbigcannons.cannon_control.contraption.PitchOrientedContraptionEntity;
 import rbasamoyai.createbigcannons.CBCCompatTransformers;
 
@@ -23,6 +22,6 @@ public final class TankAfterSmokeEvents {
                 local,localAxis,level.getGameTime(),level.random.nextLong());
         double range=LightingCommon.CANNON_CULL.get();
         for(var player:level.players())if(player.position().distanceToSqr(world)<=range*range)
-            PacketDistributor.sendToPlayer(player,payload);
+            SloNetwork.sendToPlayer(player,payload);
     }
 }

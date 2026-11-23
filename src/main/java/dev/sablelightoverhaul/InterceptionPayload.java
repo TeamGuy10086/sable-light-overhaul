@@ -7,7 +7,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** One confirmed visual/audio event. Neither medium uses the other's distance cutoff. */
 public record InterceptionPayload(ResourceLocation dimension, Vec3 center, Vec3 incomingMotion,
@@ -47,12 +46,12 @@ public record InterceptionPayload(ResourceLocation dimension, Vec3 center, Vec3 
             double distance = viewer.distanceToSqr(center);
             if (viewer.connection.hasChannel(TYPE)) {
                 if (receives(distance, range)) {
-                    if (sized != null && viewer.connection.hasChannel(Sized.TYPE)) PacketDistributor.sendToPlayer(viewer, sized);
-                    else PacketDistributor.sendToPlayer(viewer, payload);
+                    if (sized != null && viewer.connection.hasChannel(Sized.TYPE)) SloNetwork.sendToPlayer(viewer, sized);
+                    else SloNetwork.sendToPlayer(viewer, payload);
                 }
             } else if (power > 0 && distance <= LEGACY_RANGE * LEGACY_RANGE
                     && viewer.connection.hasChannel(BlastPreviewPayload.TYPE)) {
-                PacketDistributor.sendToPlayer(viewer, legacy);
+                SloNetwork.sendToPlayer(viewer, legacy);
             }
         }
     }

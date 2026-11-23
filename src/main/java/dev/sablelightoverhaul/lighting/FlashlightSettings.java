@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.FlashlightBeam;
 import dev.sablelightoverhaul.FlashlightPeersPayload;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * One player's flashlight settings, kept on the player.
@@ -110,7 +110,7 @@ public final class FlashlightSettings {
    // Both the step the page edits and the blocks the beam is drawn with: the client's copy of a server
    // config can differ, and a beam whose length disagreed with the lamp it is aimed at would be a
    // strange bug to chase.
-   PacketDistributor.sendToPlayer(server,
+   SloNetwork.sendToPlayer(server,
      new dev.sablelightoverhaul.FlashlightStatePayload(isOn(server),state[0],state[1],
        LightingCommon.distance(state[1]),state[2],state[3],state[4],state[5],state[6],state[7],state[8]));
   }
@@ -141,7 +141,7 @@ public final class FlashlightSettings {
    List<FlashlightPeersPayload.Peer> peers=range>0.0 ? near(level,viewer,range) : List.of();
    if(peers.equals(LAST_SENT.get(viewer.getUUID())))continue;
    LAST_SENT.put(viewer.getUUID(),peers);
-   PacketDistributor.sendToPlayer(viewer,new FlashlightPeersPayload(peers));
+   SloNetwork.sendToPlayer(viewer,new FlashlightPeersPayload(peers));
   }
  }
  /** The lamps of the players within {@code range} of this one, nearest first and capped. */

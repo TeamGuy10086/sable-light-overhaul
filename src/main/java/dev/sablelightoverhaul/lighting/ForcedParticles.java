@@ -20,6 +20,10 @@ import net.minecraft.server.level.ServerPlayer;
  * packet. {@code particles.forceLoad} false restores vanilla's 32-block behaviour.
  */
 public final class ForcedParticles {
+ private static boolean custom(ParticleOptions options) {
+  return dev.sablelightoverhaul.SableLightOverhaul.ID.equals(
+      net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.getKey(options.getType()).getNamespace());
+ }
  /** How far vanilla lets a particle travel; only mentioned to explain what is being worked around. */
  public static final double VANILLA_RANGE=32.0;
  private ForcedParticles(){}
@@ -29,6 +33,8 @@ public final class ForcedParticles {
   */
  public static void send(ServerLevel level,List<ServerPlayer> players,ParticleOptions options,
                          double x,double y,double z,int count,double dx,double dy,double dz,double speed){
+  if(players.isEmpty())return;
+  if(custom(options)) players=players.stream().filter(p -> p.connection.hasChannel(dev.sablelightoverhaul.FlashPayload.TYPE)).toList();
   if(players.isEmpty())return;
   if(!LightingCommon.PARTICLE_FORCE.get()){
    // Untouched vanilla path: a caller that asked for a cull of its own still gets it, and vanilla
@@ -47,6 +53,16 @@ public final class ForcedParticles {
   */
  public static int broadcast(ServerLevel level,ParticleOptions options,
                              double x,double y,double z,int count,double dx,double dy,double dz,double speed){
+  if(custom(options)){
+   var viewers=level.players().stream().filter(p -> p.connection.hasChannel(dev.sablelightoverhaul.FlashPayload.TYPE)).toList();
+   if(!LightingCommon.PARTICLE_FORCE.get()){
+    int sent=0;
+    for(var viewer:viewers) if(level.sendParticles(viewer,options,false,x,y,z,count,dx,dy,dz,speed))sent++;
+    return sent;
+   }
+   send(level,viewers,options,x,y,z,count,dx,dy,dz,speed);
+   return viewers.size();
+  }
   if(!LightingCommon.PARTICLE_FORCE.get())return level.sendParticles(options,x,y,z,count,dx,dy,dz,speed);
   ClientboundLevelParticlesPacket packet=packet(options,x,y,z,count,dx,dy,dz,speed);
   int sent=0;

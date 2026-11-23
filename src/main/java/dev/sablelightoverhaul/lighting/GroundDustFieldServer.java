@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.AfterSmokeModel.Point;
 import dev.sablelightoverhaul.GroundDustFieldModel.*;
 import dev.sablelightoverhaul.GroundDustFieldPayload;
@@ -13,7 +14,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Bounded main-world terrain sampling. No chunk loads, repeat rays or post-hit random offsets. */
 public final class GroundDustFieldServer {
@@ -59,7 +59,7 @@ public final class GroundDustFieldServer {
             LightingCommon.GROUND_FIELD_SPREAD.get(),LightingCommon.GROUND_FIELD_SPEED.get(),LightingCommon.GROUND_FIELD_LIFT.get(),
             LightingCommon.GROUND_FIELD_TURBULENCE.get(),LightingCommon.CANNON_GROUND_ALPHA.get(),LightingCommon.GROUND_FIELD_SIZE.get(),LightingCommon.GROUND_FIELD_STEP.get(),LightingCommon.GROUND_DUST_DENSITY.get(),LightingCommon.GROUND_CORRIDOR_WIDTH.get(),LightingCommon.GROUND_OUTER_LIFT.get(),LightingCommon.GROUND_MOTION_SCALE.get(),LightingCommon.GROUND_HEIGHT_SCALE.get());
         var event=new GroundDustFieldPayload(level.dimension().location(),point(origin),point(axis),level.getGameTime(),level.random.nextLong(),settings,patches);
-        for(var viewer:viewers)PacketDistributor.sendToPlayer(viewer,event);
+        for(var viewer:viewers)SloNetwork.sendToPlayer(viewer,event);
         if(LightingCommon.on(LightingCommon.GEN_DEBUG))com.mojang.logging.LogUtils.getLogger().info(
             "SLO ground field: probes={} patches={} spacing={} remainingTickBudget={}",offsets.size(),patches.size(),spacing,budget.remaining);
     }

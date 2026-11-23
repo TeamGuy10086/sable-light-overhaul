@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -32,7 +33,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -55,6 +55,7 @@ public final class DiscoBallLdlib {
  public static void register(IEventBus bus){MENUS.register(bus);}
  /** Open the page for one ball. @returns false when the block entity is gone, so the caller can fall back. */
  public static boolean open(Player player,BlockPos pos){
+  if (player instanceof net.minecraft.server.level.ServerPlayer remote && !remote.connection.hasChannel(dev.sablelightoverhaul.lighting.GeneratorEditPayload.TYPE)) return false;
   if(!(player.level().getBlockEntity(pos) instanceof DiscoBallBlockEntity))return false;
   player.openMenu(new Holder(player,pos),buffer->buffer.writeBlockPos(pos));
   return true;
@@ -204,7 +205,7 @@ public final class DiscoBallLdlib {
  private static String format(double value){return String.format(java.util.Locale.ROOT,"%.2f",value);}
  /** Edits only originate from a player using the page, which is always the client side. */
  private static void send(Player owner,GeneratorEditPayload payload){
-  if(owner.level().isClientSide)PacketDistributor.sendToServer(payload);
+  if(owner.level().isClientSide)ClientChannels.sendToServer(payload);
  }
  // ---- the same page for the shared configuration window --------------------------------------------
  /** The page's category, and the section it belongs to, in the window's three-level taxonomy. */

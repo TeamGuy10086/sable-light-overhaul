@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -45,7 +46,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -102,6 +102,7 @@ public final class ProfileLdlib {
      * and cannot go stale by carrying an old one.
      */
     public static boolean open(ServerPlayer player, EffectApi.SourceKey key, ResourceLocation mountType) {
+  if (!player.connection.hasChannel(dev.sablelightoverhaul.ProfileEditPayload.TYPE)) return false;
         if (player == null || key == null) return false;
         player.openMenu(new Holder(player, key, mountType), buffer -> {
             ProfileWire.SOURCE_KEY.encode(buffer, key);
@@ -328,7 +329,7 @@ public final class ProfileLdlib {
         // Only a row that holds its own value can be put back on the preset. A row already on the preset has
         // nothing to forget, and a button that did nothing would be worse than no button at all.
         if (overridden) row.addChild(button("↺", () -> {
-            PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(
+            ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(
                     holder.key(), kindId, List.of(path)));
             tell(Component.translatable("sablelightoverhaul.profile.restoredOne", rowLabel(path)));
         }));
@@ -393,7 +394,7 @@ public final class ProfileLdlib {
                     tell(LocalizedText.component("本页没有可固定的键"));
                     return;
                 }
-                PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(
+                ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(
                         pageHolder.key(), Map.of(pageKind.toString(), values)));
                 tell(LocalizedText.component("已固定本页 %s 项 —— 此后不再随炮种预设变化", values.size()));
             }),
@@ -401,7 +402,7 @@ public final class ProfileLdlib {
             // defaults of its own, so restoring is removing the record rather than writing one.
             button(LocalizedText.text("还原本页"), () -> {
                 if (pageHolder == null || pageKind == null || pagePaths.isEmpty()) return;
-                PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(
+                ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(
                         pageHolder.key(), pageKind, pagePaths));
                 tell(LocalizedText.component("已还原本页 %s 项 —— 回落到炮种预设", pagePaths.size()));
             }),
@@ -441,7 +442,7 @@ public final class ProfileLdlib {
                     });
                     if (!numbers.isEmpty()) byType.put(type, numbers);
                 });
-                PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(), byType));
+                ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(), byType));
                 tell(Component.translatable("sablelightoverhaul.profile.imported", byType.size(),
                         export.modVersion(), export.unknownLines().size()));
             }));
@@ -502,7 +503,7 @@ public final class ProfileLdlib {
 
     /** Edits only originate from a player using the page, which is always the client side. */
     private static void send(Player owner, ProfileEditPayload payload) {
-        if (owner.level().isClientSide) PacketDistributor.sendToServer(payload);
+        if (owner.level().isClientSide) ClientChannels.sendToServer(payload);
     }
 
 
@@ -543,7 +544,7 @@ public final class ProfileLdlib {
                         return shape == FieldSpec.Kind.TOGGLE ? new FieldValue.Bool(n != 0) : new FieldValue.Num(n);
                     }, edit -> send(holder.player(),new ProfileEditPayload(holder.key(),kindId,path,
                             edit instanceof FieldValue.Bool b ? b.on() ? 1 : 0 : FieldValue.numeric(edit))));
-                    resets.put(key, () -> PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(holder.key(),kindId,List.of(path))));
+                    resets.put(key, () -> ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(holder.key(),kindId,List.of(path))));
                 }
                 source.group(category, system.label(), system.side() == ProfileCatalogue.Side.CLIENT
                         ? LocalizedText.text("客户端") : LocalizedText.text("服务端"), fields);
@@ -552,9 +553,9 @@ public final class ProfileLdlib {
                 var values = new LinkedHashMap<String,Double>();
                 var stored = ProfileCache.storedAll(holder.key(),kindId);
                 kindPaths.forEach((path,system)->values.put(path,stored.getOrDefault(path,ProfileKeys.preset(system,path))));
-                if(!values.isEmpty())PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(),Map.of(kindId.toString(),values)));
+                if(!values.isEmpty())ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(),Map.of(kindId.toString(),values)));
             });
-            clears.put(category, () -> PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(holder.key(),kindId,List.copyOf(kindPaths.keySet()))));
+            clears.put(category, () -> ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileClearPayload(holder.key(),kindId,List.copyOf(kindPaths.keySet()))));
         }
         source.action(LocalizedText.text("固定当前炮种"), () -> { var r=pins.get(selected[0]);if(r!=null)r.run(); });
         source.action(LocalizedText.text("还原当前炮种"), () -> { var r=clears.get(selected[0]);if(r!=null)r.run(); });
@@ -580,6 +581,6 @@ public final class ProfileLdlib {
             values.forEach((key,text)->{try{double n=Double.parseDouble(text);if(Double.isFinite(n))numbers.put(key,n);}catch(NumberFormatException ignored){}});
             if(!numbers.isEmpty())byType.put(type,numbers);
         });
-        if(!byType.isEmpty())PacketDistributor.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(),byType));
+        if(!byType.isEmpty())ClientChannels.sendToServer(new dev.sablelightoverhaul.ProfileImportPayload(holder.key(),byType));
     }
 }

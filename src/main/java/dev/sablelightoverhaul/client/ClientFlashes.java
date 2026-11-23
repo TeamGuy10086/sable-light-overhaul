@@ -1,6 +1,7 @@
 package dev.sablelightoverhaul.client;
 
 import dev.sablelightoverhaul.FlashPayload;
+import net.minecraft.world.phys.Vec3;
 import dev.sablelightoverhaul.FlashStore;
 import dev.sablelightoverhaul.SableLightOverhaul;
 import java.util.ArrayList;
@@ -97,12 +98,24 @@ public final class ClientFlashes {
         return effectsEnabled();
     }
     public static void receive(FlashPayload payload) {
+        spawn(payload);
+    }
+
+    public static boolean localMuzzle(ClientLevel level, Vec3 origin, Vec3 axis, int kind, float power, float size) {
+        if (level != Minecraft.getInstance().level || ClientChannels.has(FlashPayload.TYPE)) return false;
+        Vec3 direction = axis.normalize();
+        return spawn(new FlashPayload(level.dimension().location(), origin.x, origin.y, origin.z,
+                (float) direction.x, (float) direction.y, (float) direction.z, kind, -1,
+                origin.x, origin.y, origin.z, power, size));
+    }
+
+    private static boolean spawn(FlashPayload payload) {
         ClientLevel level = Minecraft.getInstance().level;
-        if (level == null || !level.dimension().location().equals(payload.dimension())) return;
+        if (level == null || !level.dimension().location().equals(payload.dimension())) return false;
         if (owner != level) reset(level);
         selectMode(level);
-        if(!Float.isFinite(payload.charge()) || payload.charge()<0 || !Float.isFinite(payload.plumeSize()) || payload.plumeSize()<=0) return;
-        if(!effectsEnabled() || !FlashStore.valid(payload.lightX(),payload.lightY(),payload.lightZ(),payload.dx(),payload.dy(),payload.dz(),payload.kind())) return;
+        if(!Float.isFinite(payload.charge()) || payload.charge()<0 || !Float.isFinite(payload.plumeSize()) || payload.plumeSize()<=0) return false;
+        if(!effectsEnabled() || !FlashStore.valid(payload.lightX(),payload.lightY(),payload.lightZ(),payload.dx(),payload.dy(),payload.dz(),payload.kind())) return false;
         // Which cannon fired, resolved before anything is built from the shot. A shot names its mount, the mount
         // names the cannon, and the cannon names its values -- so this string is what every per-cannon value on
         // this path is looked up with. It used to be resolved further down, after the light had already been
@@ -125,14 +138,14 @@ public final class ClientFlashes {
                 payload.kind(), level.getGameTime(), pulse,
                 layout,
                 new FlashStore.Emitter(payload.emitterId(),payload.lightX(),payload.lightY(),payload.lightZ(),payload.charge(),payload.plumeSize(),
-                    payload.hasProfile()?payload.profile():null),payload.groupedMuzzle())) return;
+                    payload.hasProfile()?payload.profile():null),payload.groupedMuzzle())) return false;
         if(payload.kind()==0) FireballParticle.bigMuzzle(level,payload.x(),payload.y(),payload.z(),payload.dx(),payload.dy(),payload.dz(),
             payload.charge(),MuzzleClientConfig.BLAST_PROFILE.curve(payload.hasProfile()?payload.profile():null).durationTicks(),
             payload.fireballSizeScale());
         // Big cannons retain native smoke/flame. Autocannons use an oriented flame, never a FLASH billboard.
-        if (payload.kind() == 1 || payload.kind() == 3) Minecraft.getInstance().particleEngine.createParticle(SableLightOverhaul.AUTO_MUZZLE.get(),
-                payload.x(), payload.y(), payload.z(), payload.dx(), payload.dy(), payload.dz());
-        // One lighting submission per tick; particle visuals remain immediate.
+        if (payload.kind() == 1 || payload.kind() == 3) return Minecraft.getInstance().particleEngine.createParticle(SableLightOverhaul.AUTO_MUZZLE.get(),
+                payload.x(), payload.y(), payload.z(), payload.dx(), payload.dy(), payload.dz()) != null;
+        return true;
     }
     public static boolean owns(ClientLevel level) { return effectsEnabled() && level == owner && level == Minecraft.getInstance().level; }
     /**

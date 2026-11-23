@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.effects;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.BlastVisualScale;
 import dev.sablelightoverhaul.HostileSmokeWeapon;
 import dev.sablelightoverhaul.ServerFlashes;
@@ -174,7 +175,7 @@ public final class DefaultListeners {
         double range = LightingCommon.SHOCKWAVE_RANGE.get();
         for (var player : level.players()) {
             if (player.distanceToSqr(event.center()) > range * range) continue;
-            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, payload);
+            SloNetwork.sendToPlayer(player, payload);
         }
     }
 

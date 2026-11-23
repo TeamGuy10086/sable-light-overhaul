@@ -18,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import rbasamoyai.createbigcannons.CBCCompatTransformers;
 import rbasamoyai.createbigcannons.munitions.big_cannon.AbstractBigCannonProjectile;
 
@@ -141,7 +140,7 @@ public final class HostileShellFeed {
             }
             if (!nearby.isEmpty()) recipients.add(player.getUUID());
             if (!nearby.isEmpty() || previous.contains(player.getUUID())) {
-                PacketDistributor.sendToPlayer(player, wrap.apply(new HostileShellPayload(
+                SloNetwork.sendToPlayer(player, wrap.apply(new HostileShellPayload(
                     level.dimension().location(), level.getGameTime(), nearby)));
             }
         }

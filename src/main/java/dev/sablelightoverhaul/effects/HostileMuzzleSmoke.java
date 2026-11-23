@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.effects;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.CannonDustEvents;
 import dev.sablelightoverhaul.FlashStore;
 import dev.sablelightoverhaul.HostileSmokePayload;
@@ -7,7 +8,6 @@ import dev.sablelightoverhaul.HostileSmokeWeapon;
 import dev.sablelightoverhaul.api.EffectApi;
 import dev.sablelightoverhaul.lighting.LightingCommon;
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 final class HostileMuzzleSmoke {
     private HostileMuzzleSmoke() {}
@@ -39,7 +39,7 @@ final class HostileMuzzleSmoke {
         double range = LightingCommon.CANNON_CULL.get();
         for (var player : level.players()) {
             if (player.distanceToSqr(muzzle) > range * range || !player.connection.hasChannel(HostileSmokePayload.TYPE)) continue;
-            PacketDistributor.sendToPlayer(player, payload);
+            SloNetwork.sendToPlayer(player, payload);
             event.cancellation().acknowledgeMuzzleSmoke(player.getUUID());
         }
     }

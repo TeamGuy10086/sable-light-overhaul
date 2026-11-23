@@ -1,4 +1,5 @@
 package dev.sablelightoverhaul.lighting;
+import dev.sablelightoverhaul.SloNetwork;
 import java.util.*;
 import dev.sablelightoverhaul.FlarePayload;
 import dev.sablelightoverhaul.LocalizedText;
@@ -17,7 +18,6 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 /** Server side of the debug flares: /sloflare commands and full-snapshot broadcasts. Never loads chunks. */
 @EventBusSubscriber(modid=SableLightOverhaul.ID)
@@ -91,7 +91,7 @@ public final class DebugFlareServer {
  @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event){if(event.getEntity() instanceof ServerPlayer p)send(p,p.serverLevel());}
  @SubscribeEvent public static void dimension(PlayerEvent.PlayerChangedDimensionEvent event){if(event.getEntity() instanceof ServerPlayer p)send(p,p.serverLevel());}
  @SubscribeEvent public static void stopped(ServerStoppedEvent event){FLARES.clear();}
- private static void send(ServerPlayer player,ServerLevel level){PacketDistributor.sendToPlayer(player,new FlarePayload(level.dimension().location(),snapshot(level)));}
- private static void broadcast(ServerLevel level){if(level.players().isEmpty())return;FlarePayload packet=new FlarePayload(level.dimension().location(),snapshot(level));for(ServerPlayer player:level.players())PacketDistributor.sendToPlayer(player,packet);}
+ private static void send(ServerPlayer player,ServerLevel level){SloNetwork.sendToPlayer(player,new FlarePayload(level.dimension().location(),snapshot(level)));}
+ private static void broadcast(ServerLevel level){if(level.players().isEmpty())return;FlarePayload packet=new FlarePayload(level.dimension().location(),snapshot(level));for(ServerPlayer player:level.players())SloNetwork.sendToPlayer(player,packet);}
  private static List<FlarePayload.State> snapshot(ServerLevel level){List<FlarePayload.State> list=FLARES.get(level);return list==null?List.of():List.copyOf(list);}
 }

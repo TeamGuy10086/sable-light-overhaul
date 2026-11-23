@@ -16,7 +16,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Feeds the client the two endpoints of every tracer shell's tick, so the client can run CBC's trail
@@ -187,7 +186,7 @@ public final class TracerFeed {
    if(track.isEmpty())continue;
    lastFed+=track.size();
    lastTold++;
-   PacketDistributor.sendToPlayer(player,new ShellTrackPayload(level.dimension().location(),List.copyOf(track)));
+   SloNetwork.sendToPlayer(player,new ShellTrackPayload(level.dimension().location(),List.copyOf(track)));
   }
  }
  /** A position as three one-decimal numbers, for the diagnostic line. */

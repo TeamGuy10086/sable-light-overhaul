@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.client.ui;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -34,8 +35,15 @@ public final class ConfigKey {
         }
     }
 
+    public static boolean canRequestServerConfig() {
+        return ClientChannels.has(dev.sablelightoverhaul.ServerConfigRequestPayload.TYPE)
+                && ClientChannels.has(dev.sablelightoverhaul.ServerConfigCatalogPayload.TYPE)
+                && ClientChannels.has(dev.sablelightoverhaul.ServerConfigDeniedPayload.TYPE);
+    }
+
     public static void requestServerConfig() {
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+        if (!canRequestServerConfig()) return;
+        ClientChannels.sendToServer(
                 new dev.sablelightoverhaul.ServerConfigRequestPayload());
     }
 

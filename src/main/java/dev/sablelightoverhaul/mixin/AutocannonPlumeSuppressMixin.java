@@ -15,6 +15,11 @@ public abstract class AutocannonPlumeSuppressMixin {
         at=@At("HEAD"),cancellable=true,require=1,expect=1,allow=1)
     private void slo$removeNativeAutocannonPlume(AutocannonPlumeParticleData data,ClientLevel level,
             double x,double y,double z,double dx,double dy,double dz,CallbackInfoReturnable<Particle> ci) {
+        if (!dev.sablelightoverhaul.client.ClientChannels.has(dev.sablelightoverhaul.FlashPayload.TYPE)) {
+            var axis = new net.minecraft.world.phys.Vec3(dx, dy, dz).normalize();
+            var origin = new net.minecraft.world.phys.Vec3(x, y, z).add(axis.scale(0.1));
+            if (!dev.sablelightoverhaul.client.ClientFlashes.localMuzzle(level, origin, axis, 1, 4, data.scale())) return;
+        }
         dev.sablelightoverhaul.client.MuzzleVisualProbe.suppressedAutoPlume();
         ci.setReturnValue(null);
     }

@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.SableLightOverhaul;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +21,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.util.TriState;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The vortex generator's marking wand: which blocks are registered, and how the player says so.
@@ -150,7 +150,7 @@ public final class VortexInteractions {
      registered.min(),registered.size(),registered.bits()));
   }
   Corner corner=CORNERS.get(server.getUUID());
-  PacketDistributor.sendToPlayer(server,new VortexMarksPayload(level.dimension().location(),List.copyOf(marks),
+  SloNetwork.sendToPlayer(server,new VortexMarksPayload(level.dimension().location(),List.copyOf(marks),
     corner!=null,corner==null?null:corner.ship(),corner==null?null:corner.level()));
  }
  /**

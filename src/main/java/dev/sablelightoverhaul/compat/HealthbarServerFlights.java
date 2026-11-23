@@ -1,4 +1,5 @@
 package dev.sablelightoverhaul.compat;
+import dev.sablelightoverhaul.SloNetwork;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,7 +25,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 /** Resolved only after the common bridge confirms the optional API. */
 public final class HealthbarServerFlights {
  private HealthbarServerFlights(){}
@@ -119,7 +119,7 @@ public final class HealthbarServerFlights {
  }
 
  private static final class ConfirmedFeed implements ServerFlightListener {
-  private record Pending(AutocannonFlightPayload.Segment segment,boolean requiresPhases){}
+  private record Pending(AutocannonFlightPayload.Segment segment,boolean requiresPhases,boolean grouped){}
   private final HashMap<ServerLevel,ArrayList<Pending>> pending=new HashMap<>();
   private final HashMap<ServerLevel,HashMap<Long,Integer>> latest=new HashMap<>();
   private final HashMap<ServerLevel,Boolean> legacyDirectViewers=new HashMap<>();
@@ -146,7 +146,7 @@ public final class HealthbarServerFlights {
    var segment=new AutocannonFlightPayload.Segment(
        current.id().number(),previous.position(),current.position(),current.profile().type().equals("createbigcannons:flak_autocannon"),
        HealthbarFlightPhase.firstSegment(current));
-   segments.add(new Pending(segment,direct));
+   segments.add(new Pending(segment,direct,direct && HealthbarFlightPhase.isGrouped(level,current)));
   }
 
   @Override public void ended(ServerLevel level,FlightSnapshot end,String reason){
@@ -158,7 +158,7 @@ public final class HealthbarServerFlights {
    var previous=segments.get(i);
    var last=previous.segment();
    segments.set(i,new Pending(new AutocannonFlightPayload.Segment(last.number(),last.from(),last.to(),
-       last.flak(),last.phaseFifths(),true),previous.requiresPhases()));
+       last.flak(),last.phaseFifths(),true),previous.requiresPhases(),previous.grouped()));
   }
 
   private void flush(ServerTickEvent.Post event){
@@ -172,15 +172,16 @@ public final class HealthbarServerFlights {
       boolean sampled=samplesDirectFlight(player);
       boolean phased=player.connection.hasChannel(AutocannonFlightPayload.Phased.TYPE);
       if(!sampled&&!phased&&!player.connection.hasChannel(AutocannonFlightPayload.TYPE))continue;
-      var nearby=entry.getValue().stream().filter(item->!item.requiresPhases() || phased&&!sampled).map(Pending::segment)
+      boolean burst=player.connection.hasChannel(dev.sablelightoverhaul.PhalanxBurstPayload.TYPE);
+      var nearby=entry.getValue().stream().filter(item->!burst || !item.grouped()).filter(item->!item.requiresPhases() || phased&&!sampled).map(Pending::segment)
           .filter(segment->player.distanceToSqr(segment.to())<=rangeSquared)
           .sorted(Comparator.comparingDouble(segment->player.distanceToSqr(segment.to())))
           .limit(AutocannonFlightPayload.LIMIT).toList();
       if(!nearby.isEmpty()){
        var payload=new AutocannonFlightPayload(level.dimension().location(),session,nearby);
-       if(sampled)PacketDistributor.sendToPlayer(player,new AutocannonFlightPayload.Sampled(payload));
-       else if(phased)PacketDistributor.sendToPlayer(player,new AutocannonFlightPayload.Phased(payload));
-       else PacketDistributor.sendToPlayer(player,payload);
+       if(sampled)SloNetwork.sendToPlayer(player,new AutocannonFlightPayload.Sampled(payload));
+       else if(phased)SloNetwork.sendToPlayer(player,new AutocannonFlightPayload.Phased(payload));
+       else SloNetwork.sendToPlayer(player,payload);
       }
      }
     }

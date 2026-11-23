@@ -51,6 +51,7 @@ dev.sablelightoverhaul.ClientHooks.install(
         SableLightOverhaul.hostileMathReceiver = HostileMathShells::receive;
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HostileShellClient::render);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HostileShellClient::nativeJoined);
+        SableLightOverhaul.phalanxBurstReceiver = PhalanxBurstClient::receive;
         SableLightOverhaul.autocannonTrackReceiver = TrailTrack::receiveAutocannon;
         SableLightOverhaul.phasedAutocannonTrackReceiver = TrailTrack::receivePhasedAutocannon;
         SableLightOverhaul.autocannonFlightReceiver = TrailTrack::receiveConfirmedAutocannon;

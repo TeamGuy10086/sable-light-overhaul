@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.effects;
 
+import dev.sablelightoverhaul.SloNetwork;
 import dev.sablelightoverhaul.HostileShellPayload.Model;
 import dev.sablelightoverhaul.NavalSoundPayload;
 import dev.sablelightoverhaul.NavalSoundPayload.Kind;
@@ -11,7 +12,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import rbasamoyai.createbigcannons.block_armor_properties.BlockArmorPropertiesHandler;
 
 /** One sound per selected CBC naval block collision, using the state before the hit changes it. */
@@ -54,7 +54,7 @@ public final class NavalImpactAudio {
         int limit = NavalSoundPayload.IMPACT_RANGE + 16;
         for (var player : level.players()) {
             if (player.distanceToSqr(point) <= limit * limit && player.connection.hasChannel(NavalSoundPayload.TYPE)) {
-                PacketDistributor.sendToPlayer(player, sound);
+                SloNetwork.sendToPlayer(player, sound);
             }
         }
     }

@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.lighting;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -28,7 +29,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -66,6 +66,7 @@ public final class FlashlightLdlib {
  public static void register(IEventBus bus){MENUS.register(bus);}
  /** Open the page for one player. Always true: unlike a lamp, there is nothing that could have gone. */
  public static boolean open(Player player){
+  if (player instanceof net.minecraft.server.level.ServerPlayer remote && !remote.connection.hasChannel(dev.sablelightoverhaul.FlashlightEditPayload.TYPE)) return false;
   player.openMenu(new Holder(player));
   return true;
  }
@@ -265,7 +266,7 @@ public final class FlashlightLdlib {
  private static String format(double value){return String.format(java.util.Locale.ROOT,"%.2f",value);}
  /** Edits only originate from a player using the page, which is always the client side. */
  private static void send(Player owner,String field,double value){
-  if(owner.level().isClientSide)PacketDistributor.sendToServer(new FlashlightEditPayload(field,value));
+  if(owner.level().isClientSide)ClientChannels.sendToServer(new FlashlightEditPayload(field,value));
  }
  // ------------------------------------------------------------------ scoped config adapter
  /**

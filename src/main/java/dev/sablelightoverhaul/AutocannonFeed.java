@@ -6,7 +6,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import rbasamoyai.createbigcannons.CBCCompatTransformers;
 import rbasamoyai.createbigcannons.munitions.autocannon.AbstractAutocannonProjectile;
 import dev.sablelightoverhaul.lighting.LightingCommon;
@@ -55,8 +54,8 @@ public final class AutocannonFeed {
    if(!nearby.isEmpty()){
     var payload=new AutocannonTrackPayload(new ShellTrackPayload(level.dimension().location(),List.copyOf(nearby)),flakIds);
     if(!phases.isEmpty()&&player.connection.hasChannel(AutocannonTrackPayload.Phased.TYPE))
-     PacketDistributor.sendToPlayer(player,new AutocannonTrackPayload.Phased(payload,phases));
-    else PacketDistributor.sendToPlayer(player,payload);
+     SloNetwork.sendToPlayer(player,new AutocannonTrackPayload.Phased(payload,phases));
+    else SloNetwork.sendToPlayer(player,payload);
    }
   }
  }

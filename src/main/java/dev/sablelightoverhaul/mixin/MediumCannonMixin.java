@@ -48,7 +48,7 @@ public abstract class MediumCannonMixin {
  private boolean slo$singlePlume(ServerLevel level,net.minecraft.server.level.ServerPlayer player,
     net.minecraft.core.particles.ParticleOptions options,boolean force,double x,double y,double z,int count,
     double dx,double dy,double dz,double speed,Operation<Boolean> original) {
-  if(options instanceof BigCannonPlumeParticleData && dev.sablelightoverhaul.lighting.LightingCommon.CANNON_ENABLED.get()) return false;
+  if(options instanceof BigCannonPlumeParticleData && player.connection.hasChannel(dev.sablelightoverhaul.FlashPayload.TYPE) && dev.sablelightoverhaul.lighting.LightingCommon.CANNON_ENABLED.get()) return false;
   return original.call(level,player,options,force,x,y,z,count,dx,dy,dz,speed);
  }
 

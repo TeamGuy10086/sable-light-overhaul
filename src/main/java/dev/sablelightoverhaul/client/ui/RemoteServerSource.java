@@ -1,12 +1,12 @@
 package dev.sablelightoverhaul.client.ui;
 
+import dev.sablelightoverhaul.client.ClientChannels;
 import dev.sablelightoverhaul.ServerConfigCatalogPayload;
 import dev.sablelightoverhaul.ServerConfigEditPayload;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The server configuration, rendered by the same window as the client one.
@@ -59,12 +59,13 @@ public final class RemoteServerSource implements Source {
 
     @Override
     public void write(FieldSpec spec, FieldValue value) {
+        if (!canWrite(spec)) return;
         values.put(spec.key(), value);
-        PacketDistributor.sendToServer(new ServerConfigEditPayload(spec.key(), value));
+        ClientChannels.sendToServer(new ServerConfigEditPayload(spec.key(), value));
     }
 
     @Override
     public boolean canWrite(FieldSpec spec) {
-        return writable;
+        return writable && ClientChannels.has(ServerConfigEditPayload.TYPE);
     }
 }

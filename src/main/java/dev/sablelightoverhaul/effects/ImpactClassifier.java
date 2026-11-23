@@ -136,7 +136,10 @@ public final class ImpactClassifier {
 
     /** The shell's own charge decides the tier, whatever it happened to hit. */
     static int tierOf(float yield) {
-        java.util.List<? extends Integer> thresholds = LightingCommon.EXPL_YIELD_TIERS.get();
+        return tierOf(yield, LightingCommon.EXPL_YIELD_TIERS.get());
+    }
+
+    public static int tierOf(float yield, java.util.List<? extends Integer> thresholds) {
         int tier = 1;
         for (int i = 0; i < thresholds.size(); i++) if (yield >= thresholds.get(i)) tier = i + 2;
         return Math.min(tier, 6);

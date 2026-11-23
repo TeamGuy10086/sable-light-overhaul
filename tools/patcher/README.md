@@ -1,6 +1,6 @@
-# SLO offline shader patchers — 0.3.2
+# SLO offline shader patchers — 0.3.4
 
-Three Windows x64 GUI executables apply the Sable Light Overhaul 0.1.638 adapters to a user's own shader packs. Python, PowerShell and a network connection are not required to run the EXEs. The download buttons open the original authors' pages in the user's browser; the tools do not download packs automatically.
+Three Windows x64 GUI executables apply the Sable Light Overhaul 0.1.717 adapters to a user's own shader packs. Python, PowerShell and a network connection are not required to run the EXEs. The download buttons open the original authors' pages in the user's browser; the tools do not download packs automatically.
 
 ## Supported inputs
 
@@ -36,7 +36,7 @@ The tool never overwrites its input or an existing output. Unsupported/modified 
 The same EXE can run without a GUI for tests and scripts:
 
 ```powershell
-& '.\Mellow-SLO-Patcher-0.3.2.exe' --input 'C:\Downloads\Mellow-v3.5.zip' --output 'C:\Downloads\Mellow + SLO Patch.zip' --report 'C:\Downloads\patch-result.json'
+& '.\Mellow-SLO-Patcher-0.3.4.exe' --input 'C:\Downloads\Mellow-v3.5.zip' --output 'C:\Downloads\Mellow + SLO Patch.zip' --report 'C:\Downloads\patch-result.json'
 ```
 
 Exit status 0 = success, 1 = patch failure. A windowed EXE does not have a console, so use `--report` for machine-readable results. Report paths are explicitly supplied by the caller and should be new JSON files separate from inputs and outputs.
@@ -54,7 +54,7 @@ The source archive includes `payloads/*.json.gz`, the patcher Python source, thi
 ```powershell
 python -m pip install -r requirements-build.txt
 python -m unittest discover -s . -p 'test_*.py' -v
-python build_exes.py payloads dist --release 0.3.2
+python build_exes.py payloads dist --release 0.3.4
 ```
 
 For an unfrozen development GUI, copy the desired payload to `payload.json.gz` beside `app.py`, then run `python app.py`. Build with Python 3.12 x64 on Windows. All three executables share the same `app.py` and `engine.py` and differ only in embedded payload and branding. The builder's staging folder is an author-side intermediate, not an installation destination.

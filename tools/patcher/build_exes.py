@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("payloads", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--release", default="0.3.2")
+    parser.add_argument("--release", default="0.3.4")
     args = parser.parse_args()
     tools = Path(__file__).resolve().parent
     staging = Path.cwd() / "build/patcher-exes"
