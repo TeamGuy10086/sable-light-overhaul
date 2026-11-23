@@ -549,7 +549,8 @@ public final class AdvancedLights {
         for(var e:entries) {
             var f=e.getValue(); long age=now-f.born();
             if(age<0 || now>=f.expires()) continue;
-            boolean big=f.kind()==0;
+            boolean explosion = f.kind() == dev.sablelightoverhaul.FlashPayload.EXPLOSION_LIGHT;
+            boolean big = f.kind() == 0 || explosion;
             boolean blast=big && age<f.layout().muzzleHoldTicks();
             // Three kinds, three lights: 0 is the big cannon (blast then smoke), 1 the autocannon family, 2 the tank
             // cannon, which has its own profile rather than borrowing the autocannon's.
@@ -560,7 +561,7 @@ public final class AdvancedLights {
             double strength=profile.curve(slots).brightness(stageAge);
             if(strength<=0) continue;
             double x=big?f.x():f.emitter().x(), y=big?f.y():f.emitter().y(), z=big?f.z():f.emitter().z();
-            if(big && age>=f.layout().muzzleHoldTicks()) {
+            if(big && !explosion && age>=f.layout().muzzleHoldTicks()) {
                 if(f.trackedAt()!=Long.MIN_VALUE) {
                     if(!f.hot() || now-f.trackedAt()>2) continue;
                     x=f.tipX(); y=f.tipY(); z=f.tipZ();

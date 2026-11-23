@@ -34,7 +34,27 @@ $nl = [string][char]10
 # perturbation is per pixel. The field has to step off the surface along the face it is on, so it needs the
 # geometric direction; taking it from the perturbed normal made the chosen axis flicker between neighbours pixel
 # by pixel, which showed up as a blocky patchwork and as large wrongly lit areas beside a wall.
-$insert2 = '    lighting += get_slo_lighting(scene_pos, normal, flat_normal, ao, light_levels.y, material.albedo);'
+$ambientAnchor = '    // Blocklight'
+if ([regex]::Matches($text, [regex]::Escape($ambientAnchor)).Count -ne 1) { throw 'missing diffuse skylight boundary' }
+$text = $text.Replace($ambientAnchor, "    vec3 sloAmbient = lighting;${nl}${nl}$ambientAnchor")
+$insert2 = @'
+    sloPlasmaDayMix = 0.0;
+    lighting += get_slo_lighting(scene_pos, normal, flat_normal, ao, light_levels.y, material.albedo);
+    lighting += slo_plasma_daylight_shift(sloAmbient, sloPlasmaDayMix);
+'@
+
+# Opaque hands share deferred4 with terrain. Translucent hands have their own program.
+$receiver = 'vec3 cylinderLight = slo_plasma_surface(scene_pos, normal);'
+if (!$block.Contains($receiver)) { throw 'missing plasma field receiver' }
+$block = "#define SLO_PHOTON_PLASMA_SHADOW${nl}" + $block
+$block = $block.Replace('vec3 slo_plasma_surface(', "bool sloPlasmaHand = false;${nl}vec3 slo_plasma_surface(")
+$block = $block.Replace($receiver, "#if !defined(SLO_PLASMA_COLUMN) || defined(PROGRAM_GBUFFERS_HAND_WATER)${nl}    vec3 cylinderLight = vec3(0.0);${nl}#else${nl}    vec3 cylinderLight = sloPlasmaHand ? vec3(0.0) : slo_plasma_surface(scene_pos, normal);${nl}#endif")
+$deferredRel = 'program/d4_deferred_shading.fsh'
+$deferred = [IO.File]::ReadAllText((Join-Path $PSScriptRoot "baselines/photon/shaders/$deferredRel"), $utf8NoBom)
+$handAnchor = 'fix_hand_depth(depth_mc, is_hand);'
+if (!$deferred.Contains($handAnchor)) { throw 'missing deferred hand depth classification' }
+$deferred = $deferred.Replace($handAnchor, "$handAnchor${nl}    sloPlasmaHand = is_hand;")
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot "photon/shaders/$deferredRel"), $deferred, $utf8NoBom)
 
 $text = $text.Replace($anchor1, $anchor1 + $nl + $nl + $block + $nl + $cloudBlock)
 $text = $text.Replace($anchor2, $insert2 + $nl + $nl + $anchor2)
@@ -476,6 +496,18 @@ $cloudFogNew = $cloudFogGuard + $nl + $cloudFogNew
 $cloudFogNew = $cloudFogNew.Replace("`r`n", "`n").Trim()
 $cloudFogText = $cloudFogText.Replace($cloudFogAnchor, $cloudFogNew)
 if ($cloudFogText -notmatch 'slo_cloud_world') { throw 'the cloud fog patch did not apply' }
+$foregroundClouds = 'if (is_translucent || is_translucent_lod) {'
+$cloudDebugAnchor = "read_clouds_and_aurora(refracted_uv, clouds_apparent_distance);"
+if ([regex]::Matches($cloudFogText, [regex]::Escape($cloudDebugAnchor)).Count -ne 1) {
+    throw 'cloud composite diagnostic anchor mismatch'
+}
+$cloudDebugPattern = '(' + [regex]::Escape($cloudDebugAnchor) + '\s*)' +
+    [regex]::Escape($foregroundClouds)
+$cloudFogText = [regex]::Replace($cloudFogText, $cloudDebugPattern,
+    '$1if ((is_translucent || is_translucent_lod) && SLO_SMOKE_CLOUD_DEBUG != 3) {')
+if (-not $cloudFogText.Contains('&& SLO_SMOKE_CLOUD_DEBUG != 3')) {
+    throw 'foreground cloud diagnostic did not apply'
+}
 [System.IO.File]::WriteAllText($cloudFogPath, $cloudFogText, $utf8NoBom)
 Write-Output ("cloud fog -> {0}  ({1} bytes)" -f $cloudFogRel, ([System.IO.File]::ReadAllBytes($cloudFogPath)).Length)
 
@@ -1039,7 +1071,7 @@ $basicProps = $basicProps.Replace($blendAnchor, '# SLO: was off, which made ever
     '# programs. Same equation as the separate programs below, and the one c1_blend_layers expects.' + $nl +
     'blend.gbuffers_all_translucent.colortex13 = ONE ONE_MINUS_SRC_ALPHA ONE ONE_MINUS_SRC_ALPHA')
 
-$basicProps = $basicProps.Replace($miscAnchor, $miscAnchor + ' TRANSLUCENT_BASIC SLO_NO_LOD_DISCARD SLO_RT13_ALPHA SLO_SMOKE_ONLY SLO_TAA_SMOKE SLO_COVERAGE_TINT SLO_SMOKE_BG_FOG SLO_SMOKE_FOG_FIX SLO_SMOKE_EDGE_FIX')
+$basicProps = $basicProps.Replace($miscAnchor, $miscAnchor + ' TRANSLUCENT_BASIC SLO_NO_LOD_DISCARD SLO_RT13_ALPHA SLO_SMOKE_ONLY SLO_TAA_SMOKE SLO_COVERAGE_TINT SLO_SMOKE_BG_FOG SLO_SMOKE_FOG_FIX SLO_SMOKE_EDGE_FIX SLO_SMOKE_CLOUD_DEBUG SLO_PLASMA_COLUMN')
 $basicProps = $basicProps.TrimEnd() + $nl + $nl +
     '# SLO-CAPABILITY: gbuffers_basic_vertex_alpha = 1 (slo_translucent, since SLO Patch D 0.1.311)' + $nl +
     '# 0.1.311 is the first version that works: before it this pack had blending off for gbuffers_basic, so a' + $nl +
@@ -1115,6 +1147,22 @@ foreach ($langRel in $langLines.Keys) {
     $langText = [System.IO.File]::ReadAllText((Join-Path $baselineShaders $langRel), $utf8NoBom)
     if ($langText -notmatch 'option\.TRANSLUCENT_BASIC=') {
         $langText = $langText.TrimEnd() + $nl + ($langLines[$langRel] -join $nl) + $nl
+    }
+    $cloudDebugLabels = if ($langRel -match 'zh_CN') {
+        @('option.SLO_SMOKE_CLOUD_DEBUG=烟雾与云遮挡诊断',
+          'value.SLO_SMOKE_CLOUD_DEBUG.0=正常',
+          'value.SLO_SMOKE_CLOUD_DEBUG.1=跳过热烟云衰减',
+          'value.SLO_SMOKE_CLOUD_DEBUG.2=云距离判断着色',
+          'value.SLO_SMOKE_CLOUD_DEBUG.3=跳过半透明前景叠云')
+    } else {
+        @('option.SLO_SMOKE_CLOUD_DEBUG=Smoke and cloud occlusion diagnostic',
+          'value.SLO_SMOKE_CLOUD_DEBUG.0=Normal',
+          'value.SLO_SMOKE_CLOUD_DEBUG.1=Bypass cloud extinction on thermal smoke',
+          'value.SLO_SMOKE_CLOUD_DEBUG.2=Color the cloud depth comparisons',
+          'value.SLO_SMOKE_CLOUD_DEBUG.3=Skip foreground clouds over translucents')
+    }
+    if ($langText -notmatch 'option\.SLO_SMOKE_CLOUD_DEBUG=') {
+        $langText = $langText.TrimEnd() + $nl + ($cloudDebugLabels -join $nl) + $nl
     }
     $langDest = Join-Path $outShaders $langRel
     New-Item -ItemType Directory -Force -Path (Split-Path $langDest -Parent) | Out-Null
@@ -1224,6 +1272,9 @@ if ($settingsText -notmatch '#define TRANSLUCENT_BASIC') {
         '//#define SLO_SMOKE_EDGE_FIX')
 }
 if ($settingsText -notmatch '#define TRANSLUCENT_BASIC') { throw 'the option define was not added' }
+$settingsText = $settingsText.TrimEnd() + $nl + $nl +
+    '#define SLO_SMOKE_CLOUD_DEBUG 0 // [0 1 2 3]' + $nl +
+    '#define SLO_PLASMA_COLUMN' + $nl
 # A depth debug for the LoD question: it paints the answer per pixel instead of describing it, so a screenshot
 # can say whether the surface at that pixel is in the vanilla depth buffer, in the LoD one, or in both and which
 # is nearer. Off unless SLO_DEPTH_DEBUG is set in the environment when the patch runs -- a debug build is a separate

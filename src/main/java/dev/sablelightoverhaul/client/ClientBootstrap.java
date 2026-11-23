@@ -52,9 +52,16 @@ dev.sablelightoverhaul.ClientHooks.install(
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HostileShellClient::render);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HostileShellClient::nativeJoined);
         SableLightOverhaul.autocannonTrackReceiver = TrailTrack::receiveAutocannon;
+        SableLightOverhaul.phasedAutocannonTrackReceiver = TrailTrack::receivePhasedAutocannon;
         SableLightOverhaul.autocannonFlightReceiver = TrailTrack::receiveConfirmedAutocannon;
         // The shockwave is the same split: the server measured the explosion, the client draws it.
         SableLightOverhaul.shockwaveReceiver = Shockwave::receive;
+        SableLightOverhaul.blastPreviewReceiver = ImpactExplosionSmoke::receivePreview;
+        SableLightOverhaul.blastApproachReceiver = DebugMissileApproach::receive;
+        SableLightOverhaul.interceptionReceiver = ImpactExplosionSmoke::receiveInterception;
+        SableLightOverhaul.sizedInterceptionReceiver = payload ->
+            ImpactExplosionSmoke.receiveInterception(payload.data(), payload.fragmentDiameter());
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(InterceptionAudio::tick);
         // And the client's half of the impact event: the payload arrives once, and the dust ring and the
         // sphere handle it as two listeners so either can be cancelled by id.
         Shockwave.install();
@@ -77,6 +84,9 @@ dev.sablelightoverhaul.ClientHooks.install(
             (net.neoforged.neoforge.client.event.ClientTickEvent.Post event)->HealthbarFlightBridge.tick(net.minecraft.client.Minecraft.getInstance().level));
         // The plume smoke this client can see, offered as particle hosts: one light follows its hot centre.
         SmokeTracker.install();
+        if (net.neoforged.fml.ModList.get().isLoaded("flywheel")) {
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(FlywheelDebris::tick);
+        }
         // The wand's highlight: the server sends which blocks are registered, this draws them.
         SableLightOverhaul.vortexReceiver = VortexHighlight::receive;
         // The server-config page: the catalogue opens a second window, a refusal closes it with a message.
@@ -115,6 +125,7 @@ dev.sablelightoverhaul.ClientHooks.install(
     }
     /** The stand-in draws the model of the block it replaced, so it needs a renderer of its own. */
     private static void blockEntityRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(dev.sablelightoverhaul.lighting.LightingBlocks.LASER_TEST_ENTITY.get(), LaserTestRenderer::new);
         event.registerBlockEntityRenderer(dev.sablelightoverhaul.lighting.LightingBlocks.LIGHT_SOURCE_ENTITY.get(), LightSourceRenderer::new);
         event.registerBlockEntityRenderer(dev.sablelightoverhaul.lighting.LightingBlocks.SPOTLIGHT_ENTITY.get(), SpotlightRenderer::new);
     }

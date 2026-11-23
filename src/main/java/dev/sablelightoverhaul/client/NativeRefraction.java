@@ -35,7 +35,7 @@ final class NativeRefraction {
     static void render(RenderLevelStageEvent event) {
         if (shader == null || !ClientFlashes.sloOnly() || !ExtraConfig.SLO_ONLY_REFRACTION.get()
                 || !ExtraConfig.SHOCKWAVE_ENABLED.get() || ExtraConfig.SHOCKWAVE_REFRACT.get() <= 0.0
-                || ExtraConfig.SHOCKWAVE_MODE.get() == ShockwaveMode.PARTICLES
+                || ExtraConfig.effectiveShockwaveMode() == ShockwaveMode.PARTICLES
                 || event.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) return;
         var waves = Shockwave.waves();
         if (waves.isEmpty()) return;

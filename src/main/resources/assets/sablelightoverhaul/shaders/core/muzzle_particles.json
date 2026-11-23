@@ -7,6 +7,7 @@
         { "name": "Sampler2" },
         { "name": "sloSmokeAtlas" },
         { "name": "sloTankSmokeAtlas" },
+        { "name": "sloDustColumnAtlas" },
         { "name": "sloSmokeMask" }
     ],
     "uniforms": [

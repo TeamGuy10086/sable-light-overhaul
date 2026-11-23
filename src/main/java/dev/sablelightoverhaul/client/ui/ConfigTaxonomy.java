@@ -191,6 +191,7 @@ public final class ConfigTaxonomy {
                 }
                 if (last.toLowerCase(java.util.Locale.ROOT).contains("ring")) return "地面尘环";
                 if (has(key, "explosions.light")) return "爆炸闪光";
+                if (has(key, "explosions.impactVisual")) return "CBC 高爆视觉";
                 if (has(key, "explosions.shockwave")) return "爆炸数据";
                 if (has(key, "explosions")) {
                     return switch (last) {

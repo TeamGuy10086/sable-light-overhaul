@@ -67,6 +67,48 @@ class HealthbarFlightTest {
    assertEquals(frame.position(partial),before.lerp(now.position(),interpolation));
   }
  }
+ @Test void directAutocannonUsesTheInstalledSdkFirstFrameVisibilityAndOnlyOnePhase(){
+  var profile=new ProjectileProfile("createbigcannons:ap_autocannon","cbc:external-autocannon-ap",1,0,0,false,.1);
+  Vec3 start=Vec3.ZERO, end=new Vec3(2,0,0);
+  var legacy=new FlightSnapshot(new ProjectileId(SESSION,1),"minecraft:overworld",profile,SESSION,null,end,end,1,100,500);
+  assertTrue(dev.sablelightoverhaul.compat.HealthbarFlightPhase.isAutocannon(legacy));
+  assertEquals(0,dev.sablelightoverhaul.compat.HealthbarFlightPhase.firstSegment(legacy));
+  java.lang.reflect.Constructor<FlightSnapshot> ctor;
+  try {
+   ctor=FlightSnapshot.class.getConstructor(ProjectileId.class,String.class,ProjectileProfile.class,UUID.class,UUID.class,
+       Vec3.class,Vec3.class,int.class,int.class,long.class,UUID.class,int.class,int.class);
+  } catch(NoSuchMethodException legacySdk){
+   assertTrue(dev.sablelightoverhaul.compat.HealthbarFlightPhase.visible(new ClientFlightFrame(legacy,start,false),.2));
+   return;
+  }
+  try {
+   for(int age:new int[]{0,1,2}){
+    var sample=ctor.newInstance(legacy.id(),legacy.dimension(),profile,SESSION,null,end,end,age,100,500L,null,0,4);
+    var frame=new ClientFlightFrame(sample,start,false);
+    assertEquals(age==1?4:0,dev.sablelightoverhaul.compat.HealthbarFlightPhase.firstSegment(sample));
+    assertEquals(age>1,dev.sablelightoverhaul.compat.HealthbarFlightPhase.visible(frame,.6));
+    assertEquals(age>0,dev.sablelightoverhaul.compat.HealthbarFlightPhase.visible(frame,.9));
+    if(age==1)assertEquals(1,frame.position(.9).x,1e-9);
+    if(age==2)assertEquals(1,frame.position(.5).x,1e-9);
+   }
+  } catch (ReflectiveOperationException failure){
+   throw new AssertionError(failure);
+  }
+ }
+ @Test void denseDirectRoundsNeverEnterThePointLightCandidates() {
+  var direct=new ProjectileProfile("createbigcannons:ap_autocannon","cbc:external-autocannon-ap",1,0,0,false,.1);
+  var normal=new ProjectileProfile("createbigcannons:ap_autocannon","cbc-autocannon",1,0,0,false,.1);
+  var inFlight=new ArrayList<FlightSnapshot>();
+  for(int shot=1;shot<=111;shot++)
+   inFlight.add(new FlightSnapshot(new ProjectileId(SESSION,shot),"minecraft:overworld",direct,
+       new UUID(0,shot),null,Vec3.ZERO,new Vec3(18,0,0),5,200,500));
+  assertEquals(111,inFlight.stream().filter(dev.sablelightoverhaul.compat.HealthbarFlightPhase::isAutocannon).count());
+  assertEquals(0,inFlight.stream().filter(dev.sablelightoverhaul.compat.HealthbarFlightPhase::allowsProjectileLight).count());
+  inFlight.add(new FlightSnapshot(new ProjectileId(SESSION,112),"minecraft:overworld",normal,
+      new UUID(0,112),null,Vec3.ZERO,new Vec3(18,0,0),5,200,500));
+  assertEquals(1,inFlight.stream().filter(dev.sablelightoverhaul.compat.HealthbarFlightPhase::allowsProjectileLight).count());
+ }
+
  @Test void longNavalFlightKeepsTheSameCarrierAndVisualThroughTick400(){
   var owned=new FlightOwnership(id->{});
   var carrier=UUID.randomUUID();

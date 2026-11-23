@@ -86,10 +86,11 @@ public final class PlumeSmokeParticle extends WindborneParticle implements Track
             float anisotropy=growth*shapeBias*progress;
             float sizeX=size*(1+anisotropy*0.45f);
             float sizeY=size*(1-anisotropy*0.30f);
-            if(MuzzleClientConfig.TANK_SMOKE_CACHED.get() && MuzzleParticleLayer.mode()!=MuzzleParticleLayer.Mode.SINGLE)
+            if(MuzzleClientConfig.TANK_SMOKE_CACHED.get() && MuzzleParticleLayer.mode()!=MuzzleParticleLayer.Mode.SINGLE){
+                if(alpha>0 && SmokeResolution.capture(this))return;
                 MuzzleSmokeMesh.drawCachedPuff(out,camera,x,y,z,xo,yo,zo,partialTick,sizeX,sizeY,rollNow,maskSeed,
                     rCol,gCol,bCol,alpha,getLightColor(partialTick));
-            else MuzzleSmokeMesh.drawPuffShaped(out,camera,x,y,z,xo,yo,zo,partialTick,sizeX,sizeY,rollNow,maskSeed,
+            }else MuzzleSmokeMesh.drawPuffShaped(out,camera,x,y,z,xo,yo,zo,partialTick,sizeX,sizeY,rollNow,maskSeed,
                 rCol,gCol,bCol,alpha,getLightColor(partialTick));
         } else {
             MuzzleSmokeMesh.draw(out,camera,x,y,z,xo,yo,zo,partialTick,size,rollNow,

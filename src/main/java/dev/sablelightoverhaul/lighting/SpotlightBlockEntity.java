@@ -27,10 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * that could change it. It now has three control modes, a switch that can be latched, an aim with
  * limits and an offset, and every one of those has to persist and reach every client, so it lives here.
  *
- * <p>Range, falloff profile and model visibility deliberately stay in the block state: the server
- * already reads the first two out of it for the beam payload, the render shape reads the third, and
- * putting them here as well would mean two copies of the same value. This class just reads and writes
- * the block state for those three fields.
+ * <p>Range lives in NBT alongside the aim; only falloff and visibility remain block state fields.
  *
  * <p>The latch is the reason this block entity ticks. Vanilla hands a block's redstone input over in
  * whole-tick steps and a button's pulse is a single tick, so a latch that samples the signal on a slow
@@ -67,6 +64,8 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
  /** Semi mode with a latch: the state the edges have flipped to. */
  private boolean latchedOn;
  private int intensity=15,width=8,color=0;
+ private int range=1;
+ public int range(){return range;}
  private int volumeMode=2;
  public int volumeMode(){return volumeMode;}
  /**
@@ -194,7 +193,7 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
   // Range and falloff are the block state's, so they are one value with one home; writing them only
   // when they differ keeps a repeated command from touching the block at all.
   if(asked.range()!=null&&differs(asked.range(),number("range"))){
-   setBlockStateField(SpotlightBlock.RANGE,clampInt(asked.range(),1,1024));changed=true;
+   range=clampInt(asked.range(),1,1024);changed=true;
   }
   if(asked.falloff()!=null&&differs(asked.falloff(),number("falloff"))){
    setBlockStateField(SpotlightBlock.MODE,clampInt(asked.falloff(),0,SpotlightBlock.MODES.length-1));changed=true;
@@ -244,7 +243,7 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
    case "offsetX"->offsetX;
   case "offsetY"->offsetY;
   case "offsetZ"->offsetZ;
-  case "range"->state.getValue(SpotlightBlock.RANGE);
+  case "range"->range;
    case "falloff"->state.getValue(SpotlightBlock.MODE);
    case "visible"->state.getValue(SpotlightBlock.VISIBLE)?1:0;
    default->0;
@@ -272,11 +271,11 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
    case "azimuth"->azimuth=wrapDegrees(value);
    case "sweepBase"->sweepBase=clampAngle(value);
    case "sweepRange"->sweepRange=clampAngle(value);
-   // The three block state fields go back to the block state: one value, one home.
+   // The two block state fields go back to the block state: one value, one home.
    case "offsetX"->offsetX=clampOffset(value);
   case "offsetY"->offsetY=clampOffset(value);
   case "offsetZ"->offsetZ=clampOffset(value);
-  case "range"->setBlockStateField(SpotlightBlock.RANGE,clampInt(value,1,1024));
+  case "range"->range=clampInt(value,1,1024);
    case "falloff"->setBlockStateField(SpotlightBlock.MODE,clampInt(value,0,SpotlightBlock.MODES.length-1));
    case "visible"->setBlockStateField(SpotlightBlock.VISIBLE,value!=0?1:0);
    default->{return;}
@@ -286,12 +285,11 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
   arm();
   sync();
  }
- /** Writes one of the three block state fields, which the block treats as its own. */
+ /** Writes one of the two block state fields, which the block treats as its own. */
  private void setBlockStateField(net.minecraft.world.level.block.state.properties.Property<?> property,int value){
   if(level==null||level.isClientSide)return;
   BlockState state=getBlockState();
-  if(property==SpotlightBlock.RANGE)state=state.setValue(SpotlightBlock.RANGE,value);
-  else if(property==SpotlightBlock.MODE)state=state.setValue(SpotlightBlock.MODE,value);
+  if(property==SpotlightBlock.MODE)state=state.setValue(SpotlightBlock.MODE,value);
   else state=state.setValue(SpotlightBlock.VISIBLE,value!=0);
   level.setBlock(worldPosition,state,3);
  }
@@ -316,6 +314,7 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
  }
  @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){
   super.saveAdditional(tag,registries);
+  tag.putInt("range",range);
   tag.putInt("control",control);tag.putBoolean("latch",latch);tag.putBoolean("switch",switchOn);tag.putBoolean("latched",latchedOn);
   tag.putInt("volumeMode",volumeMode);
   tag.putInt("intensity",intensity);tag.putInt("width",width);tag.putInt("color",color);
@@ -332,6 +331,7 @@ public class SpotlightBlockEntity extends BlockEntity implements ChannelInteract
  }
  @Override protected void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
   super.loadAdditional(tag,registries);
+  range=SpotlightRangeMigration.readRange(tag);
   owner=BlockOwners.load(tag);
   volumeMode=tag.contains("volumeMode")?clampInt(tag.getInt("volumeMode"),0,2):2;
   if(tag.contains("control"))control=clampInt(tag.getInt("control"),0,CHANNEL);

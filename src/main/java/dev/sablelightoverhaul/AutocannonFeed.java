@@ -24,6 +24,7 @@ public final class AutocannonFeed {
   if(level.players().isEmpty()||tracked.isEmpty())return;
   var frames=new ArrayList<ShellTrackPayload.Shell>();
   var flakIds=new HashSet<Integer>();
+  var phases=new HashMap<Integer,Integer>();
   for(var entry:tracked.entrySet()){
    var p=entry.getKey();
    if(p.level()!=level||!p.isTracer())continue;
@@ -32,6 +33,7 @@ public final class AutocannonFeed {
    var rawFrom=previous.position;
    var rawTo=p.position();
    int elapsed=p.tickCount-previous.tick;
+   int phase=previous.tick==0?Math.clamp(p.getPersistentData().getInt("sablehostile_launch_phase_fifths"),0,4):0;
    double distance=p.getTotalDisplacement()-previous.displacement;
    previous.update(p);
    if(!measuredStep(rawFrom,rawTo,elapsed,distance)||HealthbarServerBridge.owns(level,p.getUUID()))continue;
@@ -41,6 +43,7 @@ public final class AutocannonFeed {
    Vec3 motion=to.subtract(from);
    if(!(motion.lengthSqr()>1e-8&&motion.lengthSqr()<=4096*4096))continue;
    if(p instanceof rbasamoyai.createbigcannons.munitions.autocannon.flak.FlakAutocannonProjectile)flakIds.add(p.getId());
+   if(phase!=0)phases.put(p.getId(),phase);
    frames.add(new ShellTrackPayload.Shell(p.getId(),to.x,to.y,to.z,from.x,from.y,from.z,motion.x,motion.y,motion.z,p.getUUID()));
   }
   double range=LightingCommon.TRAIL_FEED_RANGE.get(),range2=range*range;
@@ -49,7 +52,12 @@ public final class AutocannonFeed {
    for(var s:frames)if(player.distanceToSqr(s.x(),s.y(),s.z())<=range2)nearby.add(s);
    nearby.sort(Comparator.comparingDouble(s->player.distanceToSqr(s.x(),s.y(),s.z())));
    if(nearby.size()>256)nearby.subList(256,nearby.size()).clear();
-   if(!nearby.isEmpty())PacketDistributor.sendToPlayer(player,new AutocannonTrackPayload(new ShellTrackPayload(level.dimension().location(),List.copyOf(nearby)),flakIds));
+   if(!nearby.isEmpty()){
+    var payload=new AutocannonTrackPayload(new ShellTrackPayload(level.dimension().location(),List.copyOf(nearby)),flakIds);
+    if(!phases.isEmpty()&&player.connection.hasChannel(AutocannonTrackPayload.Phased.TYPE))
+     PacketDistributor.sendToPlayer(player,new AutocannonTrackPayload.Phased(payload,phases));
+    else PacketDistributor.sendToPlayer(player,payload);
+   }
   }
  }
 

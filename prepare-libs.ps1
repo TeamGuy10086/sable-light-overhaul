@@ -1,9 +1,11 @@
-param([Parameter(Mandatory=$true)][string]$CbcJar, [string]$CbcatJar, [Parameter(Mandatory=$true)][string]$RplJar, [Parameter(Mandatory=$true)][string]$SableJar, [Parameter(Mandatory=$true)][string]$CreateJar, [Parameter(Mandatory=$true)][string]$CopycatsJar, [Parameter(Mandatory=$true)][string]$CopyfoxiesJar, [string]$WolfMiscJar)
+param([Parameter(Mandatory=$true)][string]$CbcJar, [string]$CbcatJar, [Parameter(Mandatory=$true)][string]$RplJar, [Parameter(Mandatory=$true)][string]$SableJar, [Parameter(Mandatory=$true)][string]$CreateJar, [Parameter(Mandatory=$true)][string]$CopycatsJar, [Parameter(Mandatory=$true)][string]$CopyfoxiesJar, [string]$WolfMiscJar, [string]$WorldEditJar)
 $ErrorActionPreference = 'Stop'
 $expectedCbc = 'EA017AB94637032D039899D88404838D173FA0E6286657CAE6A6C3AF459E87CA'
 if ((Get-FileHash -LiteralPath $CbcJar -Algorithm SHA256).Hash -ne $expectedCbc) { throw 'CBC binary differs from the inspected attachment.' }
 $destination = Join-Path $PSScriptRoot 'libs'
 New-Item -ItemType Directory -Force -Path $destination | Out-Null
+# WorldEdit 7.3.8 is compile-only for legacy schematic range migration.
+if ($WorldEditJar) { Copy-Item -LiteralPath $WorldEditJar -Destination (Join-Path $destination 'worldedit.jar') }
 if ($WolfMiscJar) { Copy-Item -LiteralPath $WolfMiscJar -Destination (Join-Path $destination 'wolfmisc.jar') }
 Copy-Item -LiteralPath $CbcJar -Destination (Join-Path $destination 'cbc.jar')
 if ($CbcatJar) {

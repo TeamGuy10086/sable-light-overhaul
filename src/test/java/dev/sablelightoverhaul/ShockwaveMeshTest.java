@@ -103,9 +103,11 @@ class ShockwaveMeshTest {
     @Test void theSizeFollowsTheChargeAndCoefficientOneIsTheCalibratedLook() {
         assertEquals(60.0, ShockwaveMesh.meshRadius(24.0, 1.0), 1.0E-9, "the calibration point");
         // Sub-linear: about a third of the radius for a quarter of the charge, not a quarter.
-        assertEquals(60.0 * Math.pow(4.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(4.0, 1.0), 1.0E-9, "TNT");
-        assertEquals(60.0 * Math.pow(6.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(6.0, 1.0), 1.0E-9);
-        assertEquals(60.0 * Math.pow(12.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(12.0, 1.0), 1.0E-9);
+        assertEquals(40.2 * Math.pow(4.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(4.0, 1.0), 1.0E-9, "TNT");
+        assertEquals(40.2 * Math.pow(6.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(6.0, 1.0), 1.0E-9, "MW medium HE");
+        assertEquals(40.2 * Math.pow(8.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(8.0, 1.0), 1.0E-9, "CBC HE");
+        assertEquals(40.2 * Math.pow(15.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(15.0, 1.0), 1.0E-9);
+        assertEquals(60.0 * Math.pow(16.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(16.0, 1.0), 1.0E-9);
         assertEquals(60.0 * Math.pow(32.0 / 24.0, 0.8), ShockwaveMesh.meshRadius(32.0, 1.0), 1.0E-9, "the top tier scales up");
         // The coefficient stays strictly proportional: twice the coefficient, twice the radius.
         assertEquals(ShockwaveMesh.meshRadius(24.0, 1.0) * 2.0, ShockwaveMesh.meshRadius(24.0, 2.0), 1.0E-9);

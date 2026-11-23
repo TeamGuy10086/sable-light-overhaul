@@ -1,5 +1,7 @@
 package dev.sablelightoverhaul.client;
 
+import dev.sablelightoverhaul.BlastVisualScale;
+
 import dev.sablelightoverhaul.ShockwavePayload;
 import java.util.ArrayList;
 import java.util.List;
@@ -250,8 +252,10 @@ public final class ShockwaveRing {
         int count = scaledCount;
         int perBatch = (int) Math.ceil(count / (double) tier.totalTicks());
         Vec3 center = event.center();
-        Burst burst = new Burst(center.x, center.y, center.z, speedFor(tier, blocks), tier.vyRange(),
-                tier.speedVariance(), Math.max(1, perBatch), count, core, ring);
+        double dimensionFactor = BlastVisualScale.dimensions(event.yield());
+        Burst burst = new Burst(center.x, center.y, center.z, speedFor(tier, blocks) * dimensionFactor,
+                tier.vyRange() * dimensionFactor, tier.speedVariance() * dimensionFactor,
+                Math.max(1, perBatch), count, core, ring);
         // Spawned here and now rather than queued for the next client tick: the queue was the one link that
         // never ran, and spreading 2400 over two ticks is not worth a second chance at going missing.
         spawn(level, burst);

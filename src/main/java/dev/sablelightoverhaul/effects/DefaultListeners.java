@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.effects;
 
+import dev.sablelightoverhaul.BlastVisualScale;
 import dev.sablelightoverhaul.HostileSmokeWeapon;
 import dev.sablelightoverhaul.ServerFlashes;
 import dev.sablelightoverhaul.ShockwavePayload;
@@ -104,9 +105,10 @@ public final class DefaultListeners {
             boolean hostile = key != null && key.typeId().getNamespace().equals("sablehostile");
             int emitter = hostile ? key.stableId().hashCode() | Integer.MIN_VALUE : owner == null ? 0 : owner.getId();
             boolean halfSizeFireball = hostile && key.typeId().getPath().equals(HostileSmokeWeapon.TWIN_76.path());
+            boolean groupedMuzzle = hostile && key.typeId().getPath().equals("phalanx_ciws");
             ServerFlashes.emitSized(event.level(), event.origin(), event.direction(), flashKind(event.kind()),
                 emitter, event.origin(), event.power(), event.size(), profileFor(event), mountPos,
-                !HostileMuzzleSmoke.requested(event), halfSizeFireball);
+                !HostileMuzzleSmoke.requested(event), halfSizeFireball, groupedMuzzle);
     }
 
     /**
@@ -134,15 +136,17 @@ public final class DefaultListeners {
         double exposure = 1.0 - event.solidity();
         double charge = LightingCommon.EXPL_CHARGE.get()
                 * (event.yield() / ShockwavePayload.DEFAULT_YIELD) * (0.35 + 0.65 * exposure) * scale;
-        double size = span * LightingCommon.EXPL_SIZE_SCALE.get();
+        double dimensionFactor = BlastVisualScale.dimensions(event.yield());
+        double size = span * LightingCommon.EXPL_SIZE_SCALE.get() * dimensionFactor;
         int emitter = event.source() == null ? -1 : event.source().getId();
         Vec3 center = event.center();
         // Two lights stacked up the column: one at the centre reads as a point, while a blast also lights
         // the ground it goes off on and the smoke rising above it.
         Vec3 up = new Vec3(0.0, 1.0, 0.0);
-        ServerFlashes.emitSized(event.level(), center, up, 0, emitter, center, (float) charge, (float) size);
-        Vec3 above = center.add(0.0, 2.5, 0.0);
-        ServerFlashes.emitSized(event.level(), above, up, 0, emitter, above,
+        ServerFlashes.emitSized(event.level(), center, up, dev.sablelightoverhaul.FlashPayload.EXPLOSION_LIGHT, emitter, center, (float) charge, (float) size);
+        if (event.hitClass() == EffectApi.HitClass.BURIED) return;
+        Vec3 above = center.add(0.0, 2.5 * dimensionFactor, 0.0);
+        ServerFlashes.emitSized(event.level(), above, up, dev.sablelightoverhaul.FlashPayload.EXPLOSION_LIGHT, emitter, above,
                 (float) (charge * 0.6), (float) (size * 0.6));
     }
 

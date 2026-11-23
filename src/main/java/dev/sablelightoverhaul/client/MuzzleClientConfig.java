@@ -11,7 +11,7 @@ public final class MuzzleClientConfig {
  public enum FlameRenderer { BASELINE_MESH, VOLUME }
  public static final ModConfigSpec.EnumValue<FlameRenderer> FLAME_RENDERER;
  public static final ModConfigSpec.EnumValue<MuzzleGasModel.SmokeStyle> TANK_SMOKE_STYLE;
- public static final ModConfigSpec.BooleanValue TANK_SMOKE_CACHED;
+ public static final ModConfigSpec.BooleanValue TANK_SMOKE_CACHED, CACHED_SMOKE_SIMPLE_LIGHTING;
  public static final ModConfigSpec.DoubleValue TANK_FLAME_SCALE,TANK_CORE_SCALE,TANK_GAS_SCALE,TANK_JET_SCALE,TANK_SMOKE_SCALE,TANK_SMOKE_SIZE;
  public static final ModConfigSpec.DoubleValue TANK_CLOUD_FORWARD,TANK_CLOUD_SPREAD,TANK_CLOUD_GROWTH,TANK_CLOUD_BRAKE;
  public static final ModConfigSpec.IntValue TANK_CLOUD_LIFETIME;
@@ -92,6 +92,7 @@ public final class MuzzleClientConfig {
   BIG_GAS_SCALE=b.comment("大炮体积火球主燃气团几何倍率。").defineInRange("particles.muzzle.bigCannon.fireball.gasScale",1.0,0.1,4.0);
   BIG_JET_SCALE=b.comment("大炮体积火球前向喷流几何倍率。").defineInRange("particles.muzzle.bigCannon.fireball.jetScale",1.0,0.1,4.0);
   TANK_SMOKE_CACHED=b.comment("坦克主烟和余烟使用64种预烘焙烟形，每烟团单面受光；保留场景光照，减少重复噪声/阴影/逐灯计算。默认开启，关闭恢复原三片软烟供对照。几何、数量、寿命、颜色配置不改，三瓣按共同局部坐标合成。").define("particles.muzzle.tankCannon.smokeCached",true);
+  CACHED_SMOKE_SIMPLE_LIGHTING=b.comment("Use the Photon ambient lighting path for cached cold smoke, including impact smoke. Disable to compare full lighting.").define("particles.muzzle.tankCannon.cachedSimpleLighting",true);
   TANK_SMOKE_STYLE=b.comment("坦克烟雾对照。NATIVE：原版云烟纹理、蓬松成长、冷却和至少30tick留存，只按释放进度设置出生透明度；COMPACT：沿用18tick等服务端寿命、膨胀上限和额外逐粒淡出。两者保留每发烟量上限、短冲程与无深度写入排序；只影响新出生的烟，不修改旧配置值。").defineEnum("particles.muzzle.tankCannon.smokeStyle",MuzzleGasModel.SmokeStyle.NATIVE);
   TANK_FLAME_SCALE=b.comment("坦克炮火焰整体几何倍率，0.1~8，默认2；以炮口为锚点同时缩放长度和宽度，不改亮度、烟量或光照半径；基线和体积都生效。").defineInRange("particles.muzzle.tankCannon.flameScale",2.0,0.1,8.0);
   TANK_CORE_SCALE=b.comment("坦克体积焰亮核的独立几何倍率，0.1~4，默认1；不缩放外层燃气团和喷流，Photon体积模式即时生效。").defineInRange("particles.muzzle.tankCannon.coreScale",1.0,0.1,4.0);

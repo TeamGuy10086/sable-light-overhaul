@@ -80,6 +80,20 @@ public final class SmokeDebugCommand {
             .then(Commands.argument("count", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1, 128))
                 .executes(context -> SmokeBenchmark.start(
                     com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(context, "count")))));
+        root.then(Commands.literal("battery").executes(c -> SmokeBatteryBenchmark.start())
+            .then(Commands.literal("sweep").executes(c -> SmokeBatteryBenchmark.startSweep()))
+            .then(Commands.literal("tiers").executes(c -> SmokeBatteryBenchmark.startTiers()))
+            .then(Commands.literal("stop").executes(c -> SmokeBatteryBenchmark.stop())));
+        root.then(Commands.literal("resolution").then(Commands.argument("divisor",com.mojang.brigadier.arguments.IntegerArgumentType.integer(1,16))
+            .executes(c -> {int d=com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(c,"divisor");
+                if(Integer.bitCount(d)!=1){c.getSource().sendFailure(Component.literal("Use 1, 2, 4, 8 or 16"));return 0;}
+                SmokeResolution.override=d;
+                c.getSource().sendSuccess(()->Component.literal("Smoke resolution divisor="+d+"; applies without shaders or with patched Photon Advanced."),false);return 1;})));
+        root.then(Commands.literal("resolution").then(Commands.literal("auto").executes(c -> {
+            SmokeResolution.override=0;
+            c.getSource().sendSuccess(()->Component.literal("Smoke resolution follows the F9 slider."),false);
+            return 1;
+        })));
         event.getDispatcher().register(root);
     }
 

@@ -19,7 +19,7 @@ foreach ($program in @('gbuffers_all_solid', 'gbuffers_all_translucent')) {
     int sloSkyRaw = int(floor(gl_MultiTexCoord1.y + 0.5)) & 65535;
     bool sloMaterialMarked = (sloSkyRaw & 15) == 11;
     sloMuzzleKind = sloMuzzleTag == 12 && sloMuzzleRaw > 255 ? 3 :
-        (sloMaterialMarked ? (sloMuzzleTag == 13 ? 1 : (sloMuzzleTag == 14 ? 2 : (sloMuzzleTag == 15 ? 4 : (sloMuzzleTag == 11 ? 5 : (sloMuzzleTag == 10 ? 6 : 0))))) : 0);
+        (sloMaterialMarked ? (sloMuzzleTag == 13 ? 1 : (sloMuzzleTag == 14 ? 2 : (sloMuzzleTag == 15 ? 4 : (sloMuzzleTag == 11 ? 5 : (sloMuzzleTag == 10 ? 6 : (sloMuzzleTag == 9 ? 7 : 0)))))) : 0);
     sloGasPos = vec3(0.0);
     sloGasParams = vec4(0.0);
     if (sloMuzzleKind > 0) {
@@ -50,7 +50,7 @@ foreach ($program in @('gbuffers_all_solid', 'gbuffers_all_translucent')) {
 "@)
     $last = $text.LastIndexOf("`n}")
     if ($last -lt 0) { throw "muzzle vertex closing brace missing: $rel" }
-    $text = $text.Insert($last,"`n#if $particle`n    if (sloMuzzleKind == 1 || sloMuzzleKind == 3 || sloMuzzleKind == 6) material_mask = 32u; // flame emission, never smoke`n    if (sloMuzzleKind == 2 || sloMuzzleKind == 4 || sloMuzzleKind == 5) material_mask = 0u; // smoke keeps native cooling light, no hardcoded emission`n#endif`n")
+    $text = $text.Insert($last,"`n#if $particle`n    if (sloMuzzleKind == 1 || sloMuzzleKind == 3 || sloMuzzleKind == 6) material_mask = 32u; // flame emission, never smoke`n    if (sloMuzzleKind == 7) material_mask = 32u; // plasma`n    if (sloMuzzleKind == 2 || sloMuzzleKind == 4 || sloMuzzleKind == 5) material_mask = 0u; // smoke keeps native cooling light, no hardcoded emission`n#endif`n")
     # Articulated spotlight: emission marker is exclusive to the enabled lens.
     $lensMarker = @'
 #if defined PROGRAM_GBUFFERS_BLOCK || defined PROGRAM_GBUFFERS_BLOCK_TRANSLUCENT
@@ -115,6 +115,8 @@ float slo_muzzle_alpha_cutoff() {
         $text = $text.Replace('    // Diffuse lighting', @"
 #if $particle
     if (sloMuzzleKind == 1 || sloMuzzleKind == 3 || sloMuzzleKind == 6) material.emission *= 0.35;
+    // Diffuse lighting already multiplies the result by albedo.
+    if (sloMuzzleKind == 7) material.emission = vec3(1.25);
     if (sloMuzzleKind == 4 && abs(round(sloGasPos.z)) >= 128.0) material.emission = vec3(2.2,0.72,0.12)*sloThermalHeat*sloSmokeOptions.w;
 #endif
     // Diffuse lighting
@@ -122,7 +124,7 @@ float slo_muzzle_alpha_cutoff() {
         # Procedural gas carries no atlas normal/specular material. Preserve its explicit emission mask.
         $text = $text.Replace('decode_specular_map(specular_map, material);', @"
 #if $particle
-        if (sloMuzzleKind != 3 && sloMuzzleKind != 2 && sloMuzzleKind != 4 && sloMuzzleKind != 5 && sloMuzzleKind != 6)
+        if (sloMuzzleKind != 3 && sloMuzzleKind != 2 && sloMuzzleKind != 4 && sloMuzzleKind != 5 && sloMuzzleKind != 6 && sloMuzzleKind != 7)
 #endif
         decode_specular_map(specular_map, material);
 "@)
@@ -140,28 +142,45 @@ float slo_muzzle_alpha_cutoff() {
             'float slo_z_fragment = -position_view.z; // actual depth, including far-plane-clamped tracers')
         $cloudSource = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'source\slo_particle_cloud.glsl'),$utf8)
         $text = $text.Replace('void main() {', $cloudSource + "`nvoid main() {")
+        # Address Photon depth, LOD and clouds in full-resolution pixels during the reduced draw.
+        $text = $text.Replace('gl_FragCoord.xy','slo_full_fragment_xy()')
+        $fragmentCoordinates = @'
+in vec2 uv;
+uniform vec2 sloSmokePixelScale;
+vec2 slo_full_fragment_xy() {
+    return gl_FragCoord.xy * max(sloSmokePixelScale, vec2(1.0));
+}
+'@
+        $text = $text.Replace('in vec2 uv;', $fragmentCoordinates)
         # Big smoke ends before material maps, PCSS and scene lights; same premultiplied fog contract.
         $fastAnchor = '        if (sloMuzzleKind == 5) fragment_color = slo_ribbon_sample(sloGasPos.xy)*tint;'
         if ([regex]::Matches($text,[regex]::Escape($fastAnchor)).Count -ne 1) { throw "thermal fast-path anchor mismatch" }
         $fastSmoke = @'
-        if(sloMuzzleKind==4 && abs(round(sloGasPos.z))>=128.0 && sloSmokeOptions.y>.5) {
+        float smokeSeed=round(sloGasPos.z);
+        bool thermalSmoke=sloMuzzleKind==4 && abs(smokeSeed)>=128.0;
+        bool cachedColdSmoke=sloMuzzleKind==4 && smokeSeed<=-64.0 && smokeSeed>-128.0;
+        if((thermalSmoke && sloSmokeOptions.y>.5) || (cachedColdSmoke && sloCachedSmokeSimpleLighting!=0)) {
             if(fragment_color.a < slo_muzzle_alpha_cutoff()) discard;
             float sky=clamp(light_levels.y,0.0,1.0);
             vec3 environment=max(vec3(.001),ambient_color*(.2+.8*sky*sky)+light_color*(.10*sky*sky));
+            if(cachedColdSmoke) environment+=vec3(1.0,.58,.28)*(.20*sqr(light_levels.x));
             vec3 smokeAlbedo=srgb_eotf_inv(fragment_color.rgb)*rec709_to_rec2020;
             vec3 radiance=smokeAlbedo*environment*sloSmokeOptions.z
                 +smokeAlbedo*rcp_pi*vec3(2.2,.72,.12)*sloThermalHeat*emission_scale*sloSmokeOptions.w;
             vec4 smokeFog=common_fog(length(position_scene),false);
             radiance=purkinje_shift(radiance*smokeFog.a+smokeFog.rgb,light_levels);
             fragment_color.rgb=radiance*fragment_color.a;
-            fragment_color *= slo_particle_cloud_transmission(coord,length(position_view));
+            fragment_color = slo_apply_particle_cloud(fragment_color,coord,length(position_view),thermalSmoke);
             return;
         }
 '@
         $text = $text.Replace($fastAnchor,$fastAnchor+"`n"+$fastSmoke.Replace("`r`n","`n"))
         $text = $text.Replace('    // Refraction data', @"
 #if $particle
-    if(sloMuzzleKind>0) fragment_color *= slo_particle_cloud_transmission(coord,length(position_view));
+    if(sloMuzzleKind>0) {
+        bool thermal = sloMuzzleKind==4 && abs(round(sloGasPos.z))>=128.0;
+        fragment_color = slo_apply_particle_cloud(fragment_color,coord,length(position_view),thermal);
+    }
 #endif
     // Refraction data
 "@)

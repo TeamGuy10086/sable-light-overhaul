@@ -119,34 +119,72 @@ public final class HealthbarServerFlights {
  }
 
  private static final class ConfirmedFeed implements ServerFlightListener {
-  private final HashMap<ServerLevel,ArrayList<AutocannonFlightPayload.Segment>> pending=new HashMap<>();
+  private record Pending(AutocannonFlightPayload.Segment segment,boolean requiresPhases){}
+  private final HashMap<ServerLevel,ArrayList<Pending>> pending=new HashMap<>();
+  private final HashMap<ServerLevel,HashMap<Long,Integer>> latest=new HashMap<>();
+  private final HashMap<ServerLevel,Boolean> legacyDirectViewers=new HashMap<>();
   private UUID session;
 
+  private static final net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type<?> HEALTHBAR_FLIGHT =
+      new net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type<>(ResourceLocation.parse("sablehealthbar:flight"));
+
+  private static boolean samplesDirectFlight(net.minecraft.server.level.ServerPlayer player){
+   return player.connection.hasChannel(AutocannonFlightPayload.Sampled.TYPE)
+       &&player.connection.hasChannel(HEALTHBAR_FLIGHT);
+  }
+
   @Override public void advanced(ServerLevel level,FlightSnapshot previous,FlightSnapshot current){
-   String family=current.profile().family();
-   if((!family.equals("cbc-autocannon")&&!family.equals("cbc:at-twin"))||!LightingCommon.TRAIL_FEED_ENABLED.get()
+   if(!HealthbarFlightPhase.isAutocannon(current)||!LightingCommon.TRAIL_FEED_ENABLED.get()
        ||level.players().isEmpty()||previous.position().equals(current.position())
        ||!FlightApi.tracer(level,current.id()).orElse(false))return;
+   boolean direct=HealthbarFlightPhase.isDirectAutocannon(current);
+   if(direct&&!legacyDirectViewers.computeIfAbsent(level,world->world.players().stream().anyMatch(
+       player->player.connection.hasChannel(AutocannonFlightPayload.Phased.TYPE)&&!samplesDirectFlight(player))))return;
    session=current.id().serverSession();
-   pending.computeIfAbsent(level,ignored->new ArrayList<>()).add(new AutocannonFlightPayload.Segment(
-       current.id().number(),previous.position(),current.position(),current.profile().type().equals("createbigcannons:flak_autocannon")));
+   var segments=pending.computeIfAbsent(level,ignored->new ArrayList<>());
+   latest.computeIfAbsent(level,ignored->new HashMap<>()).put(current.id().number(),segments.size());
+   var segment=new AutocannonFlightPayload.Segment(
+       current.id().number(),previous.position(),current.position(),current.profile().type().equals("createbigcannons:flak_autocannon"),
+       HealthbarFlightPhase.firstSegment(current));
+   segments.add(new Pending(segment,direct));
+  }
+
+  @Override public void ended(ServerLevel level,FlightSnapshot end,String reason){
+   var index=latest.get(level);
+   if(index==null)return;
+   Integer i=index.remove(end.id().number());
+   if(i==null)return;
+   var segments=pending.get(level);
+   var previous=segments.get(i);
+   var last=previous.segment();
+   segments.set(i,new Pending(new AutocannonFlightPayload.Segment(last.number(),last.from(),last.to(),
+       last.flak(),last.phaseFifths(),true),previous.requiresPhases()));
   }
 
   private void flush(ServerTickEvent.Post event){
+   legacyDirectViewers.clear();
    if(pending.isEmpty())return;
    double range=LightingCommon.TRAIL_FEED_RANGE.get(),rangeSquared=range*range;
    try {
     for(var entry:pending.entrySet()){
      var level=entry.getKey();
      for(var player:level.players()){
-      if(!player.connection.hasChannel(AutocannonFlightPayload.TYPE))continue;
-      var nearby=entry.getValue().stream().filter(segment->player.distanceToSqr(segment.to())<=rangeSquared)
+      boolean sampled=samplesDirectFlight(player);
+      boolean phased=player.connection.hasChannel(AutocannonFlightPayload.Phased.TYPE);
+      if(!sampled&&!phased&&!player.connection.hasChannel(AutocannonFlightPayload.TYPE))continue;
+      var nearby=entry.getValue().stream().filter(item->!item.requiresPhases() || phased&&!sampled).map(Pending::segment)
+          .filter(segment->player.distanceToSqr(segment.to())<=rangeSquared)
           .sorted(Comparator.comparingDouble(segment->player.distanceToSqr(segment.to())))
           .limit(AutocannonFlightPayload.LIMIT).toList();
-      if(!nearby.isEmpty())PacketDistributor.sendToPlayer(player,new AutocannonFlightPayload(level.dimension().location(),session,nearby));
+      if(!nearby.isEmpty()){
+       var payload=new AutocannonFlightPayload(level.dimension().location(),session,nearby);
+       if(sampled)PacketDistributor.sendToPlayer(player,new AutocannonFlightPayload.Sampled(payload));
+       else if(phased)PacketDistributor.sendToPlayer(player,new AutocannonFlightPayload.Phased(payload));
+       else PacketDistributor.sendToPlayer(player,payload);
+      }
      }
     }
-   } finally {pending.clear();}
+   } finally {pending.clear();latest.clear();}
   }
  }
 }

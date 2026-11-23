@@ -18,16 +18,53 @@ public final class ProjectileStreaks {
     private static final int NETWORK_HOLD_TICKS=2;
     private static final int HISTORY_LIMIT=10;
     private static final double MAX_PREDICTION_DISTANCE=36;
+    private static final double AUTO_LENGTH=18;
+    private static final double EXPOSURE_LENGTH=30;
+    private static final double EXPOSURE_TICKS=2; // 100 ms of simulation time
+    private static ClientLevel frameLevel;
+    private static long frameNumber;
+    private static double previousFrameTime=Double.NaN, frameTime=Double.NaN;
     private static final Map<Long,Streak> ACTIVE = new HashMap<>();
     private static ClientLevel owner;
     private static long visualTick;
     private static SpriteSet sprites;
+    private static boolean flywheelLoaded() {
+        var mods = net.neoforged.fml.ModList.get();
+        return mods != null && mods.isLoaded("flywheel");
+    }
+
+    @FunctionalInterface
+    interface SegmentSink { void draw(Vec3 from, Vec3 to, double halfWidth); }
+
+    static void drawInstanced(ClientLevel level, Camera camera, float partial, double focal, SegmentSink sink) {
+        if (owner != level) return;
+        for (Streak streak : ACTIVE.values()) {
+            if (streak.autocannon && !streak.flak) streak.drawSegments(camera, partial, focal, sink);
+        }
+    }
     private ProjectileStreaks() {}
+    public static void prepareFlywheelFrame(Camera camera, float partial, double focal) {
+        if (flywheelLoaded()) FlywheelTracers.prepareFrame(camera, partial, focal);
+    }
+
     static void clientTick(ClientLevel level, boolean running) {
         if(level!=null&&running)visualTick++;
         maintain(level);
+        if (flywheelLoaded()) FlywheelTracers.updateLevel(level, hasInstancedCandidates());
+    }
+
+    private static boolean hasInstancedCandidates() {
+        for (Streak streak : ACTIVE.values()) if (streak.autocannon && !streak.flak) return true;
+        return false;
     }
     static long visualTick(){return visualTick;}
+    static void beginFrame(ClientLevel level,float partial){
+        frameNumber++;
+        previousFrameTime=frameLevel==level?frameTime:Double.NaN;
+        frameLevel=level;
+        frameTime=level==null?Double.NaN:level.getGameTime()-1+Math.clamp(partial,0,1);
+        if(frameTime<previousFrameTime)previousFrameTime=Double.NaN;
+    }
     public static void maintain(ClientLevel level) {
         if(owner!=level){new ArrayList<>(ACTIVE.values()).forEach(Particle::remove);ACTIVE.clear();owner=level;}
         if(level!=null)for(var it=ACTIVE.entrySet().iterator();it.hasNext();){
@@ -49,37 +86,94 @@ public final class ProjectileStreaks {
     }
     private static void accept(ClientLevel level, EffectApi.Host host, boolean autocannon, boolean flak,
                                boolean math, boolean confirmed, boolean terminal) {
+        accept(level,host,autocannon,flak,math,confirmed,terminal,0,visualTick);
+    }
+    static void acceptPhasedAutocannon(ClientLevel level, EffectApi.Host host, boolean flak, int phaseFifths) {
+        accept(level,host,true,flak,false,false,false,phaseFifths,visualTick);
+    }
+    private static void accept(ClientLevel level, EffectApi.Host host, boolean autocannon, boolean flak,
+                               boolean math, boolean confirmed, boolean terminal, int phaseFifths, long sampleTick) {
         if(owner!=level)maintain(level);
         if(!ExtraConfig.STREAK_ENABLED.get()||sprites==null)return;
         Vec3 from=host.previous(),to=host.current();
         if(!finite(from)||!finite(to)||from.distanceToSqr(to)<1e-8||from.distanceToSqr(to)>4096*4096)return;
         Vec3 motion=to.subtract(from);
-        var guard=ClientFlashes.STORE.trailGuard(from,to,level.getGameTime(),baseWidth(autocannon),0);
+        // Mathematical samples already start at the server's muzzle; keep their phase and endpoints intact.
+        var guard=math?null:ClientFlashes.STORE.trailGuard(from,to,level.getGameTime(),baseWidth(autocannon),0);
         if(guard!=null){from=guard.clipStart(from,to);if(from==null)return;}
         Streak streak=ACTIVE.get(host.id());
         if(streak==null||!streak.isAlive()){
             if(ACTIVE.size()>=ExtraConfig.STREAK_MAX.get())return;
-            streak=new Streak(level,host.id(),from,to,sprites,autocannon,flak,math,confirmed,motion); ACTIVE.put(host.id(),streak);
+            streak=new Streak(level,host.id(),from,to,sprites,autocannon,flak,math,confirmed,motion,phaseFifths,sampleTick); ACTIVE.put(host.id(),streak);
             Minecraft.getInstance().particleEngine.add(streak);
         }else if(!streak.finished||terminal){
             streak.measured |= confirmed || !autocannon && !math && HostileShellClient.measured(level,host.id());
-            streak.update(from,to,motion);
+            streak.update(from,to,motion,phaseFifths,sampleTick);
         }
     }
     /** Consecutive API frame endpoints; its clock hold is independent of local game time correction. */
-    public static void acceptMath(ClientLevel level,long id,Vec3 from,Vec3 to,long stateTick,boolean hold,boolean autocannon,boolean flak){
+    public static void acceptMath(ClientLevel level,long id,Vec3 from,Vec3 to,long stateTick,boolean hold,
+                                  boolean autocannon,boolean flak,int phaseFifths,boolean frameExposure){
         Streak prior=ACTIVE.get(id);
         if(prior!=null&&(!prior.math||prior.finished))retire(id);
-        prior=ACTIVE.get(id);
-        if(prior!=null&&prior.math&&prior.mathState!=stateTick&&stateTick-prior.mathState!=1)retire(id);
-        prior=ACTIVE.get(id);
-        if(prior==null||!prior.isAlive()||!prior.math||prior.mathState!=stateTick){
-            accept(level,new EffectApi.Host(id,from,to,to.subtract(from),0,0,true),autocannon,flak,true,false);
+        Step latest=prior==null?null:prior.steps.peekFirst();
+        if(latest==null||prior.mathState!=stateTick||!latest.from().equals(from)||!latest.to().equals(to)){
+            accept(level,new EffectApi.Host(id,from,to,to.subtract(from),0,0,true),autocannon,flak,true,false,false,phaseFifths,stateTick);
         }
-        Streak p=ACTIVE.get(id);if(p!=null){p.math=true;p.mathState=stateTick;p.mathHold=hold;p.updated=visualTick;}
+        Streak p=ACTIVE.get(id);
+        if(p!=null){p.mathHold=hold;p.updated=visualTick;p.frameExposure=frameExposure;}
     }
     public static boolean active(long id){var p=ACTIVE.get(id);return p!=null&&p.isAlive()&&ExtraConfig.STREAK_ENABLED.get();}
-    public static void finish(long id){var p=ACTIVE.get(id);if(p!=null){p.finished=true;p.clearPrediction();}}
+    public static void finish(long id){
+        var p=ACTIVE.get(id);
+        if(p!=null&&!p.finished){
+            p.finished=true;
+            p.finishedAt=visualTick;
+            p.clearPrediction();
+            if(p.math&&!p.steps.isEmpty()){
+                var latest=p.steps.peekFirst();
+                double displayed=Double.isFinite(p.lastMathDrawTime)?p.lastMathDrawTime:latest.time()-latest.ticks();
+                p.mathFinishStart=Math.clamp(displayed,latest.time()-latest.ticks(),latest.time());
+            }
+        }
+    }
+    public static void finishMathAt(long id,long stateTick,Vec3 endpoint,double fraction,int phase){
+        var p=ACTIVE.get(id);
+        if(p==null||!p.math||p.finished||!finite(endpoint))return;
+        clipMathContact(p.steps,stateTick,endpoint,fraction,phase);
+        if(p.steps.isEmpty()){p.remove();return;}
+        finish(id);
+    }
+
+    public static void captureFirstContact(ClientLevel level,long id,long startTick,Vec3 muzzle,long stateTick,
+                                           Vec3 endpoint,double fraction,int phase){
+        if(active(id)||stateTick!=startTick+1||fraction<=1e-6
+            ||muzzle.distanceToSqr(endpoint)>MAX_PREDICTION_DISTANCE*MAX_PREDICTION_DISTANCE)return;
+        acceptMath(level,id,muzzle,endpoint,stateTick,false,true,false,phase,true);
+        Streak streak=ACTIVE.get(id);
+        if(streak!=null){
+            double span=dev.sablelightoverhaul.FlightVisualClock.firstSegmentDuration(phase);
+            streak.steps.clear();
+            streak.steps.add(new Step(muzzle,endpoint,stateTick-span*(1-fraction),span*fraction,phase));
+            finish(id);
+        }
+    }
+
+    static void clipMathContact(ArrayDeque<Step> steps,long stateTick,Vec3 endpoint,double fraction,int phase){
+        while(!steps.isEmpty()&&steps.peekFirst().time()>stateTick)steps.removeFirst();
+        Step step=steps.peekFirst();
+        if(step==null||step.time()<stateTick-1)return;
+        Vec3 from=step.to();
+        if(step.time()==stateTick){
+            from=steps.removeFirst().from();
+            if(step.from().lerp(step.to(),fraction).distanceToSqr(endpoint)>1)return;
+        }
+        double distance=from.distanceToSqr(endpoint);
+        if(fraction<=1e-6||distance<1e-8||distance>MAX_PREDICTION_DISTANCE*MAX_PREDICTION_DISTANCE)return;
+        double span=dev.sablelightoverhaul.FlightVisualClock.firstSegmentDuration(phase);
+        steps.addFirst(new Step(from,endpoint,stateTick-span*(1-fraction),span*fraction,phase));
+        while(steps.size()>HISTORY_LIMIT)steps.removeLast();
+    }
     public static void retire(long id){var p=ACTIVE.get(id);if(p!=null)p.remove();}
     static void retireConfirmedAutocannons(){
         for(long id:List.copyOf(ACTIVE.keySet()))if(id>Integer.MAX_VALUE)retire(id);
@@ -105,7 +199,8 @@ public final class ProjectileStreaks {
             return null; // The authoritative host feed owns creation/update; never a per-point particle loop.
         }
     }
-    record Step(Vec3 from,Vec3 to,double time,double ticks){
+    record Step(Vec3 from,Vec3 to,double time,double ticks,int launchPhase){
+        Step(Vec3 from,Vec3 to,double time,double ticks){this(from,to,time,ticks,0);}
         double fraction(double at){return Math.clamp((at-time+ticks)/ticks,0,1);}
     }
 
@@ -117,12 +212,36 @@ public final class ProjectileStreaks {
             var earlier=steps.removeFirst();
             if(burst.size()<HISTORY_LIMIT)burst.add(earlier);
         }
-        double duration=1.0/burst.size();
+        int phase=burst.getLast().launchPhase();
+        double duration=dev.sablelightoverhaul.FlightVisualClock.firstSegmentDuration(phase)/burst.size();
         for(int index=burst.size()-1;index>=0;index--){
             var step=burst.get(index);
-            steps.addFirst(new Step(step.from(),step.to(),now-index*duration,duration));
+            steps.addFirst(new Step(step.from(),step.to(),now-index*duration,duration,step.launchPhase()));
         }
         while(steps.size()>HISTORY_LIMIT)steps.removeLast();
+    }
+
+    static void appendMathStep(ArrayDeque<Step> steps,Vec3 from,Vec3 to,long stateTick,int phaseFifths){
+        var latest=steps.peekFirst();
+        if(latest!=null&&latest.time()==stateTick){
+            if(latest.from().equals(from)&&latest.to().equals(to))return;
+            steps.removeFirst();
+            latest=steps.peekFirst();
+        }
+        if(latest!=null&&(stateTick-latest.time()!=1||latest.to().distanceToSqr(from)>1e-8))steps.clear();
+        double ticks=dev.sablelightoverhaul.FlightVisualClock.firstSegmentDuration(phaseFifths);
+        steps.addFirst(new Step(from,to,stateTick,ticks,phaseFifths));
+        while(steps.size()>HISTORY_LIMIT)steps.removeLast();
+    }
+
+    static double exposureStart(double previous,double now) {
+        return Double.isFinite(previous)&&previous<now-1?Math.max(previous,now-EXPOSURE_TICKS):now-1;
+    }
+
+    static double frameCutoff(double previous,double now,double end,boolean hold){
+        if(hold||now-end>=EXPOSURE_TICKS)return now-1;
+        double start=exposureStart(previous,now);
+        return start<end?start:now-1;
     }
 
     static double jitterClock(double time,double end,boolean hold) {
@@ -131,45 +250,53 @@ public final class ProjectileStreaks {
     public static final class Streak extends TextureSheetParticle {
         private final long id;
         private final ArrayDeque<Step> steps=new ArrayDeque<>();
-        private long updated,mathState;
+        private long updated,mathState,finishedAt;
+        private double lastMathDrawTime=Double.NaN,mathFinishStart;
+        private float lastMathDrawPartial;
+        private long submittedFrame=Long.MIN_VALUE;
+        private double submittedTime, exposureFrom;
         private final boolean autocannon,flak;
-        private boolean math,mathHold,finished,measured;
+        private boolean math,mathHold,finished,measured,frameExposure;
         private Step prediction;
         private boolean predictionChecked;
         private Vec3 motion;
-        private Streak(ClientLevel level,long id,Vec3 from,Vec3 to,SpriteSet sprites,boolean autocannon,boolean flak,boolean math,boolean confirmed,Vec3 motion){
+        private Streak(ClientLevel level,long id,Vec3 from,Vec3 to,SpriteSet sprites,boolean autocannon,boolean flak,boolean math,boolean confirmed,Vec3 motion,int phaseFifths,long sampleTick){
             super(level,to.x,to.y,to.z);this.id=id;this.autocannon=autocannon;this.flak=flak;this.math=math;hasPhysics=false;
             measured=confirmed||!autocannon&&!math&&HostileShellClient.measured(level,id);
-            pickSprite(sprites);update(from,to,motion);
+            pickSprite(sprites);update(from,to,motion,phaseFifths,sampleTick);
         }
-        void update(Vec3 from,Vec3 to,Vec3 newMotion){
-            long now=visualTick;
+        void update(Vec3 from,Vec3 to,Vec3 newMotion,int phaseFifths,long now){
+            if(math){
+                appendMathStep(steps,from,to,now,phaseFifths);
+                mathState=now;
+                acceptHead(from,to,newMotion,visualTick);
+                return;
+            }
             Step oldPrediction=prediction;
             clearPrediction();
             predictionChecked=false;
             Step previous=steps.peekFirst();
             if(previous!=null&&previous.time()==now){
                 if(previous.from().equals(from)&&previous.to().equals(to))return;
-                if(!math&&previous.to().distanceToSqr(from)<=1e-8){
+                if(previous.to().distanceToSqr(from)<=1e-8){
                     appendArrivalBurst(steps,from,to,now);
                     acceptHead(from,to,newMotion,now);
                     return;
                 }
-                if(math)steps.removeFirst();
-                else while(!steps.isEmpty()&&steps.peekFirst().time()>now-1)steps.removeFirst();
+                while(!steps.isEmpty()&&steps.peekFirst().time()>now-1)steps.removeFirst();
                 previous=steps.peekFirst();
             }
             int span=1;
-            if(previous!=null&&previous.to().distanceToSqr(from)>(math?4:1e-8)){
+            if(previous!=null&&previous.to().distanceToSqr(from)>1e-8){
                 long elapsed=now-(long)Math.ceil(previous.time());
                 Vec3 visible=oldPrediction==null?previous.to():
                     oldPrediction.from().lerp(oldPrediction.to(),oldPrediction.fraction(now-1));
-                if(autocannon&&!math){
+                if(autocannon){
                     // Stretch the display time of the received segment without drawing through the missing space.
                     if(canReconnect(elapsed,visible,from,to,newMotion)&&followsAutocannonHeading(visible,to,newMotion))
                         span=(int)elapsed;
                     steps.clear();
-                }else if(!math&&!measured&&canReconnect(elapsed,visible,from,to,newMotion)){
+                }else if(!measured&&canReconnect(elapsed,visible,from,to,newMotion)){
                     // Continue from the displayed head. The incoming position is reached over one render tick.
                     from=visible;
                     if(elapsed>1&&previous.to().distanceToSqr(visible)>1e-8){
@@ -183,7 +310,8 @@ public final class ProjectileStreaks {
                     steps.clear();
                 }
             }
-            steps.addFirst(new Step(from,to,now,span));
+            double duration=phaseFifths==0?span:dev.sablelightoverhaul.FlightVisualClock.firstSegmentDuration(phaseFifths);
+            steps.addFirst(new Step(from,to,now,duration,phaseFifths));
             while(steps.size()>HISTORY_LIMIT)steps.removeLast();
             acceptHead(from,to,newMotion,now);
         }
@@ -224,15 +352,30 @@ public final class ProjectileStreaks {
                 boolean hold=!finished&&(autocannon||measured)&&!Minecraft.getInstance().hasSingleplayerServer();
                 return jitterClock(time,steps.peekFirst().time(),hold);
             }
-            long elapsed=Math.max(0,visualTick-updated);
-            return dev.sablelightoverhaul.FlightVisualClock.time((long)steps.peekFirst().time(),mathHold,partial)
-                + elapsed + (finished&&mathHold ? Math.clamp(partial,0,1) : 0);
+            if(finished){
+                if(frameExposure&&frameLevel==level&&Double.isFinite(frameTime))
+                    return Math.max(frameTime,lastMathDrawTimeOrStart());
+                return mathFinishStart+Math.max(0,visualTick-finishedAt+partial-lastMathDrawPartial);
+            }
+            return dev.sablelightoverhaul.FlightVisualClock.time(mathState,mathHold,partial);
         }
         private double persistence(){
             return autocannon ? 1.0 : ExtraConfig.STREAK_TICKS.get();
         }
-        private double lengthBudget(double time){
-            double limit=autocannon ? 18.0 : ExtraConfig.STREAK_LENGTH.get();
+        private double lastMathDrawTimeOrStart(){
+            return Double.isFinite(lastMathDrawTime)?lastMathDrawTime:mathFinishStart;
+        }
+        private double previousSubmission(){
+            if(submittedFrame==frameNumber)return exposureFrom;
+            return submittedFrame==frameNumber-1?submittedTime:previousFrameTime;
+        }
+        private double cutoff(double time){
+            if(!frameExposure||frameLevel!=level||steps.isEmpty())return time-persistence();
+            return frameCutoff(previousSubmission(),time,steps.peekFirst().time(),mathHold&&!finished);
+        }
+        private double lengthBudget(double time,double cutoff){
+            if(frameExposure&&time-cutoff>1+1e-6)return EXPOSURE_LENGTH;
+            double limit=autocannon ? AUTO_LENGTH : ExtraConfig.STREAK_LENGTH.get();
             Step latest=steps.peekFirst();
             if(latest==null||time<=latest.time())return limit;
             // Start shortening immediately even when the live line was capped by distance.
@@ -246,7 +389,7 @@ public final class ProjectileStreaks {
         public Vec3 sortingCentre(float partial){
             double time=renderClock(partial);
             preparePrediction(time);
-            double cut=time-persistence(),remaining=lengthBudget(time);
+            double cut=cutoff(time),remaining=lengthBudget(time,cut);
             Vec3 head=null,tail=null;
             for(var s:steps){
                 double end=s.fraction(time),start=s.fraction(cut);
@@ -271,18 +414,31 @@ public final class ProjectileStreaks {
             return box.inflate(Math.max(baseWidth(autocannon),autocannon ? 1.0 : ExtraConfig.STREAK_MAX_WIDTH.get())*(flak?4:1));
         }
         @Override public void render(VertexConsumer out,Camera camera,float partial){
-            if(!isAlive()||steps.isEmpty()||!ExtraConfig.STREAK_ENABLED.get()||HealthbarFlightBridge.suppress(id))return;
-            double renderTime=renderClock(partial);
-            preparePrediction(renderTime);
-            double cutoff=renderTime-persistence();
-            double remaining=lengthBudget(renderTime),width=baseWidth(autocannon);
-            double focal=Math.abs(com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix().m11())*Minecraft.getInstance().getWindow().getHeight()*.5;
-            double minimumPixels=(autocannon ? ExtraConfig.STREAK_AUTO_MIN_PIXELS : ExtraConfig.STREAK_MIN_PIXELS).get();
-            double maxWidth=autocannon ? 1.0 : ExtraConfig.STREAK_MAX_WIDTH.get();
+            if (autocannon && !flak && flywheelLoaded() && FlywheelTracers.drawing(level)) return;
             int rgb=autocannon ? 0xFFD800 : ExtraConfig.STREAK_COLOR.get();
             int light=(ClientFlashes.inPackLighting()||!IrisCompat.shaderPackInUse())
                 ?dev.sablelightoverhaul.GasVertexData.streakLight(LightTexture.FULL_BRIGHT)
                 :MuzzleParticleLayer.markLight(LightTexture.FULL_BRIGHT,true);
+            Vec3 eye=camera.getPosition();
+            double focal = Math.abs(com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix().m11())
+                * Minecraft.getInstance().getWindow().getHeight() * .5;
+            drawSegments(camera, partial, focal, (from,to,width) -> prism(out,from.subtract(eye),to.subtract(eye),width,rgb,light));
+        }
+
+        private void drawSegments(Camera camera, float partial, double focal, SegmentSink sink) {
+            if(!isAlive()||steps.isEmpty()||!ExtraConfig.STREAK_ENABLED.get()||HealthbarFlightBridge.suppress(id))return;
+            double renderTime=renderClock(partial);
+            if(math&&!finished){lastMathDrawTime=renderTime;lastMathDrawPartial=partial;}
+            preparePrediction(renderTime);
+            double cutoff=cutoff(renderTime);
+            if(frameExposure&&submittedFrame!=frameNumber){
+                exposureFrom=previousSubmission();
+                submittedFrame=frameNumber;
+                submittedTime=renderTime;
+            }
+            double remaining=lengthBudget(renderTime,cutoff),width=baseWidth(autocannon);
+            double minimumPixels=(autocannon ? ExtraConfig.STREAK_AUTO_MIN_PIXELS : ExtraConfig.STREAK_MIN_PIXELS).get();
+            double maxWidth=autocannon ? 1.0 : ExtraConfig.STREAK_MAX_WIDTH.get();
             Vec3 eye=camera.getPosition();
             for(Step s:steps){
                 double end=s.fraction(renderTime),start=s.fraction(cutoff);
@@ -298,7 +454,7 @@ public final class ProjectileStreaks {
                     b=FlakCloudPuffParticle.clipStreakHead(level,a,b,partial);
                     if(a.distanceToSqr(b)<1e-10)continue;
                 }
-                prism(out,a.subtract(eye),b.subtract(eye),drawWidth*.5,rgb,light);
+                sink.draw(a,b,drawWidth*.5);
             }
         }
         private void prism(VertexConsumer out,Vec3 a,Vec3 b,double width,int rgb,int light){

@@ -19,7 +19,7 @@ public final class ExtraConfig {
  /** 云层照明：各向同性是默认，相位函数与多次散射是两级手动质量档；参与与否按光源类别决定。 */
  public static ModConfigSpec.BooleanValue CLOUDS_ENABLED,CLOUDS_PHASE,CLOUDS_MULTI_SCATTER,CLOUDS_DYNAMIC,CLOUDS_SPOTLIGHTS;
  public static ModConfigSpec.DoubleValue CLOUDS_INTENSITY,CLOUDS_SPHERE_REACH,CLOUDS_REACH_SCALE,CLOUDS_INTEGRATION,CLOUDS_FALLOFF_SCALE,CLOUDS_TRACER_GLOW,CLOUDS_BLAST_GLOW;
- public static ModConfigSpec.BooleanValue STREAK_ENABLED,FLAK_COMPACT;
+ public static ModConfigSpec.BooleanValue STREAK_ENABLED,FLAK_COMPACT,EXPLOSION_MESH_TRAILS;
  public static ModConfigSpec.IntValue FLAK_SMOKE_LIMIT;
  public static ModConfigSpec.DoubleValue FLAK_DENSITY_DETAIL;
  public static ModConfigSpec.IntValue FAR_CONTACT_RANGE, FAR_CONTACT_FOCUS_SIZE;
@@ -50,6 +50,9 @@ public final class ExtraConfig {
  public static ModConfigSpec.DoubleValue GROUND_DUST_ROTATION;
  public static ModConfigSpec.ConfigValue<java.util.List<? extends String>> SHOCKWAVE_RING_CORE,SHOCKWAVE_RING_GROUPS;
  /** 冲击波用哪一种画法，或者两种都画。见 {@link Shockwave} 与 SHOCKWAVE-REDESIGN.zh-CN.md。 */
+ static ShockwaveMode effectiveShockwaveMode() {
+  return ImpactExplosionConfig.enabled.get() ? ShockwaveMode.MESH : SHOCKWAVE_MODE.get();
+ }
  public enum ShockwaveMode {
   /** 只画我们自己生成的半透明波面：0 粒子，不占粒子的公共层（见 ShockwaveMesh）。 */
   MESH,
@@ -61,7 +64,7 @@ public final class ExtraConfig {
  public static ModConfigSpec.BooleanValue SHOCKWAVE_SHADER;
  public static ModConfigSpec.BooleanValue SLO_ONLY_REFRACTION;
     public static ModConfigSpec.DoubleValue SHOCKWAVE_REFRACT,SHOCKWAVE_DISPERSION;
-    public static ModConfigSpec.DoubleValue BEAM_VOLUME,BEAM_GLOW;
+    public static ModConfigSpec.DoubleValue BEAM_VOLUME,BEAM_GLOW,PLASMA_VOLUME_MIX;
     public static ModConfigSpec.DoubleValue FLARE_GLOW_SHRINK_DISTANCE;
     public static ModConfigSpec.BooleanValue FLARE_SHADOWS;
     public static ModConfigSpec.IntValue BEAM_SAMPLES,BEAM_OCCLUSION,BEAM_SHADOW_RANGE,BEAM_SHADOW_BUDGET,BEAM_DEBUG;
@@ -162,6 +165,8 @@ public final class ExtraConfig {
   FAR_CONTACT_HEALTH=b.comment("远景生物标记显示当前生命值 / 最大生命值。需要服务器支持发送生命值。").define("farContacts.showHealth",true);
   FLAK_SMOKE_LIMIT=b.comment("高射爆点烟同时存活的粒子上限。预算不足时先移除最早生成的高射烟瓣。").defineInRange("flakSmoke.maxActive",256,4,4096);
   FLAK_COMPACT=b.comment("高射爆点紧凑软烟：一朵热烟冷却后膨胀并淡出，替代主烟点和放射烟迹；火焰换为半数短寿命细线火花，隐藏CBC月牙爆炸粒子。关闭回退CBC爆点烟和火焰，不恢复破片或炮弹尾烟。").define("flakSmoke.compact",true);
+  EXPLOSION_MESH_TRAILS=b.comment("实验：普通CBC高爆放射尾烟改为连续网格烟带，主烟不变。默认关闭，开启后新爆炸生效；最多256条烟带，每条8段。仅出生时检测地形碰撞，不跟随移动船体；支持的材质不可用时回退原版。").define("explosions.meshTrails",false);
+  ImpactExplosionConfig.define(b);
   b.push("projectileStreak");
   STREAK_ENABLED=b.comment("炮弹视觉暂留亮线；独立于导弹烟尾迹。每枚弹体一条短线，无扩散、漂移或烟点。").define("enabled",true);
   STREAK_WIDTH=b.comment("亮线基础总宽度（格）；远距可由minPixels适度增宽，并受maxWorldWidth限制。").defineInRange("width",0.035,0.005,2.0);
@@ -225,7 +230,8 @@ public final class ExtraConfig {
     SHOCKWAVE_DISPERSION=b.comment("**色散**，0~0.2，默认 0.06：三个颜色通道分别偏移多少（R/G/B = 1-δ / 1 / 1+δ），让边缘出现彩色分裂。0 关闭色散。").defineInRange("dispersion",0.06,0.0,0.2);
   b.pop();
   b.push("spotlights.beam");
-BEAM_VOLUME=b.comment("**体积光亮度倍率**，0~2，默认 0.25：光柱整体的强度。0 关闭体积光（灯口亮斑仍在）。光柱的颜色始终是灯自己的颜色，这里只缩放亮度。").defineInRange("volume",0.25,0.0,2.0);
+PLASMA_VOLUME_MIX=b.comment("等离子束红色柱光的混色权重。0 仅叠加红光；1 在柱光最浓处给红色最大权重。").defineInRange("plasmaVolumeMix",0.5,0.0,1.0);
+    BEAM_VOLUME=b.comment("**体积光亮度倍率**，0~2，默认 0.25：光柱整体的强度。0 关闭体积光（灯口亮斑仍在）。光柱的颜色始终是灯自己的颜色，这里只缩放亮度。").defineInRange("volume",0.25,0.0,2.0);
     BEAM_GLOW=b.comment("**灯口亮斑亮度倍率**，0~4，默认 1.8：射灯灯口的亮斑与环状光晕的强度。0 关闭灯口效果，只剩体积光。")
         .defineInRange("glow",1.8,0.0,4.0);
     BEAM_WIDTH=b.comment("**光柱的宽度系数**，0.4~1.5，默认 1.0。1.0 = 光柱按灯的几何锥量；小于 1 更窄、大于 1 更宽。只对剖面带曲线的档位（1~4）有意义：档 0「强制最亮」是全平剖面，光柱本来就和受照面同宽，调它只会让它比灯窄。").defineInRange("width",1.0,0.4,1.5);

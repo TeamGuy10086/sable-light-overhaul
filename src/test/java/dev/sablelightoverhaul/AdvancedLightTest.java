@@ -42,6 +42,20 @@ class AdvancedLightTest {
         assertEquals(LightingMode.Off, LightingMode.Off.resolve(true,true,true));
         assertEquals(LightingMode.Off, LightingMode.Advanced.resolve(false,true,true));
     }
+    @Test void movingGroupedMuzzlesSpendOneLightPerCannonThenExpireDuringCeasefire() {
+        var store=new FlashStore(64);
+        var curve=new LightCurve(4,0,.2,0);
+        for (int shot=0;shot<111;shot++) {
+            int cannon=shot%2;
+            double swept=shot*.25;
+            store.add(swept,0,20*cannon,0,0,1,1,500+shot/30,curve,LightLayout.AUTO,
+                new FlashStore.Emitter(100+cannon,swept,0,20*cannon),true);
+        }
+        assertEquals(2,store.areaFlashes().size());
+        store.expire(507);
+        assertTrue(store.areaFlashes().isEmpty());
+    }
+
     @Test void twinBarrelsAndOtherGunsKeepIndependentPulses() {
         var s=new FlashStore(64);
         s.add(-0.25,0,0,0,0,1,1,10,LightCurve.AUTO,LightLayout.AUTO,new FlashStore.Emitter(12,0,0,0));

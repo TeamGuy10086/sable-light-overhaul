@@ -10,6 +10,10 @@ vec4 slo_particle_color(int kind, vec3 local, vec4 params, vec4 tint, vec3 viewP
     if (kind == 6) {
         return vec4(tint.rgb * (SLO_COMPLEMENTARY_EMISSION * SLO_COMPLEMENTARY_TRACER_GAIN), 1.0);
     }
+    if (kind == 7) {
+        if (tint.a < 0.002) discard;
+        return vec4(1.15 * pow(tint.rgb, vec3(2.2)), tint.a);
+    }
 
     vec4 color = tint;
     if (kind <= 2) {

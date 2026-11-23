@@ -218,6 +218,7 @@ def install_particles(shaders, euphoria):
         text = insert_before(text, "flat in vec4 glColor;", """flat in int sloParticleKind;
 in vec3 sloParticleLocal;
 in vec3 sloParticleView;
+in vec4 sloPlasmaTint;
 flat in vec4 sloParticleParams;
 
 """)
@@ -227,8 +228,9 @@ flat in vec4 sloParticleParams;
     if (sloLodZ < sloFragmentZ) discard;
 
     if (sloParticleKind > 0) {
+        vec4 tint = sloParticleKind == 7 ? sloPlasmaTint : glColor;
         vec4 particle = slo_particle_color(sloParticleKind, sloParticleLocal, sloParticleParams,
-                                           glColor, sloParticleView, screenPos.xy, texCoord, sloLodZ);
+                                           tint, sloParticleView, screenPos.xy, texCoord, sloLodZ);
         #if MC_VERSION >= 11500
             if (sloParticleKind != 6) {
                 vec3 ray = normalize(viewPos);
@@ -259,6 +261,7 @@ flat in vec4 sloParticleParams;
         text = insert_before(text, "flat out vec4 glColor;", """flat out int sloParticleKind;
 out vec3 sloParticleLocal;
 out vec3 sloParticleView;
+out vec4 sloPlasmaTint;
 flat out vec4 sloParticleParams;
 
 """)
@@ -267,9 +270,10 @@ flat out vec4 sloParticleParams;
     bool marked = (int(floor(gl_MultiTexCoord1.y + 0.5)) & 15) == 11;
     sloParticleKind = tag == 12 && raw > 255 ? 3 :
         (marked ? (tag == 13 ? 1 : (tag == 14 ? 2 : (tag == 15 ? 4 :
-                   (tag == 11 ? 5 : (tag == 10 ? 6 : 0))))) : 0);
+                   (tag == 11 ? 5 : (tag == 10 ? 6 : (tag == 9 ? 7 : 0)))))) : 0);
     sloParticleLocal = vec3(0.0);
     sloParticleParams = vec4(0.0);
+    sloPlasmaTint = gl_Color;
     sloParticleView = (gl_ModelViewMatrix * gl_Vertex).xyz;
     vec2 uv = gl_MultiTexCoord0.xy;
     if (sloParticleKind == 3) {

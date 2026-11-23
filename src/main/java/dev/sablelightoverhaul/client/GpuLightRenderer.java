@@ -219,8 +219,9 @@ public final class GpuLightRenderer {
     public static void render(Matrix4f projection, Matrix4f modelView, net.minecraft.client.Camera camera) {
         if (shader == null) return;
         boolean nativeOnly = ClientFlashes.sloOnly();
-        if (lightCount <= 0 && (!nativeOnly || !DebugFlares.hasStates() && IrisMuzzleBridge.beamCount() == 0)) return;
         Minecraft minecraft = Minecraft.getInstance();
+        var missileGlows=dev.sablelightoverhaul.api.ClientMissileEffectsApi.collect(minecraft.level);
+        if (lightCount <= 0 && missileGlows.isEmpty() && (!nativeOnly || !DebugFlares.hasStates() && IrisMuzzleBridge.beamCount() == 0)) return;
         var target = minecraft.getMainRenderTarget();
         if (target == null || !target.useDepth) return;
 
@@ -273,7 +274,10 @@ public final class GpuLightRenderer {
             }
             quad(builder, bounds);
         }
-        var glows = nativeOnly ? collectGlows(projView, cameraPos, target.width, target.height) : List.<Glow>of();
+        var glows = new ArrayList<Glow>(nativeOnly ? collectGlows(projView, cameraPos, target.width, target.height) : List.of());
+        for(var g:missileGlows) addGlow(glows,projView,new Vector4f((float)(g.position().x-cameraPos.x),(float)(g.position().y-cameraPos.y),
+                (float)(g.position().z-cameraPos.z),g.radius()),new Vector4f(((g.rgb()>>16)&255)/255f,((g.rgb()>>8)&255)/255f,(g.rgb()&255)/255f,g.brightness()),
+                target.width,target.height,1f,1f,0f,1f,1f);
         // build() rather than buildOrThrow(): when every light projects off screen there is no vertex to
         // store, and buildOrThrow() turns that into "BufferBuilder was empty" instead of returning null.
         // That is a whole-frame crash for a frame that simply has nothing to draw -- it fires on the frame

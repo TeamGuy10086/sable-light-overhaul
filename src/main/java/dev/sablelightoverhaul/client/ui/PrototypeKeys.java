@@ -17,7 +17,7 @@ import java.util.Set;
  */
 public final class PrototypeKeys {
     public static final Set<String> ONLY = Set.of(
-            "beam.volume", "beam.glow", "beam.shadowRange", "beam.shadowBudget", "beam.width",
+            "beam.volume", "beam.plasmaVolumeMix", "beam.glow", "beam.shadowRange", "beam.shadowBudget", "beam.width",
             "beam.debug", "lighting.mode", "disco.colors",
             "particles.groundDust.frameTicks", "shadows.longRange", "apSparks.color");
 

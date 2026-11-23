@@ -1215,6 +1215,78 @@ bool casts = !flood && (sloShadowMask & (1 << slot)) != 0;
         return tint.rgb * (light.w * falloff * diffuse * occlusion * visibility * scale);
 }
 
+// A finite luminous segment, with rounded irradiance falloff around both ends.
+#ifndef SLO_PLASMA_SOURCES
+#define SLO_PLASMA_SOURCES
+uniform vec4 sloPlasmaExtinction;
+uniform vec4 sloPlasmaStart0, sloPlasmaAxis0, sloPlasmaFlow0;
+uniform vec4 sloPlasmaStart1, sloPlasmaAxis1, sloPlasmaFlow1;
+uniform vec4 sloPlasmaStart2, sloPlasmaAxis2, sloPlasmaFlow2;
+uniform vec4 sloPlasmaStart3, sloPlasmaAxis3, sloPlasmaFlow3;
+#endif
+
+float slo_cylinder_diffuse(vec3 pos, vec3 normal, vec4 source, vec4 beam, vec4 phase, float daylight) {
+    if (!(source.w > 0.0 && beam.w > 0.0 && dot(beam.xyz, beam.xyz) > 0.99)) return 0.0;
+    vec3 local = pos - source.xyz;
+    float along = clamp(dot(local, beam.xyz), 0.0, source.w);
+    vec3 toAxis = beam.xyz * along - local;
+    float radius = beam.w * mix(3.0, 2.55, daylight);
+    float dist2 = dot(toAxis, toAxis);
+    if (dist2 >= radius * radius) return 0.0;
+    float dist = sqrt(dist2);
+    // Two nearby axial samples give even the terminal face a finite source to look at.
+    float width = min(1.0, 0.5 * source.w);
+    vec3 a = beam.xyz * max(0.0, along - width) - local;
+    vec3 b = beam.xyz * min(source.w, along + width) - local;
+    float cosA = dot(normal, a) * inversesqrt(max(dot(a,a), 1e-6));
+    float cosB = dot(normal, b) * inversesqrt(max(dot(b,b), 1e-6));
+    float incidence = max(max(cosA, cosB), 0.0);
+    if (incidence <= 0.0) return 0.0;
+    float visibility = 1.0;
+#if defined SLO_PHOTON_PLASMA_SHADOW && defined PROGRAM_DEFERRED4
+    vec3 target = pos + (cosA > cosB ? a : b);
+    visibility = slo_visibility(pos + normal * 0.045, target, 1.0, 0.0, sloShadowSteps);
+    if (visibility <= 0.0) return 0.0;
+#endif
+    float transverse = dot(toAxis, vec3(0.43, -0.29, 0.71));
+    // An integer multiplier keeps the wrapped client phase continuous (3.06 cycles/s).
+    float travel = along * 0.08 + 20.0 * phase.z;
+    float crest = sin(travel + transverse * 0.12
+                      + 0.43 * sin(along * 0.063 - transverse * 0.19 + phase.w));
+    // Seed neighbouring ground patches independently, then interpolate across cell edges.
+    vec2 uv = vec2(along / 8.0, transverse / 3.0);
+    vec2 cell = floor(uv), f = fract(uv);
+    f = f * f * (3.0 - 2.0 * f);
+    vec4 h = fract(sin(dot(cell, vec2(12.9898, 78.233))
+                 + vec4(0.0, 12.9898, 78.233, 91.2228)) * 4375.5453);
+    float patchNoise = mix(mix(h.x, h.y, f.x), mix(h.z, h.w, f.x), f.y);
+    float erosion = smoothstep(0.44, 0.82, patchNoise) * smoothstep(-0.6, 0.9, -crest);
+    float wave = 0.89 + 0.105 * crest - 0.065 * erosion;
+    return (1.0 - dist / radius) * incidence * visibility * wave;
+}
+
+#ifdef SLO_PHOTON_PLASMA_SHADOW
+float sloPlasmaDayMix = 0.0;
+
+vec3 slo_plasma_daylight_shift(vec3 ambient, float weight) {
+    // Shift existing diffuse daylight toward warm red before exposure and material albedo.
+    return ambient * vec3(0.16, -0.76, -0.85) * weight;
+}
+#endif
+
+vec3 slo_plasma_surface(vec3 pos, vec3 normal) {
+    float day = clamp(time_noon * sloFieldSkylight, 0.0, 1.0);
+    float total = (1.0 - sloPlasmaExtinction[0]) * slo_cylinder_diffuse(pos, normal, sloPlasmaStart0, sloPlasmaAxis0, sloPlasmaFlow0, day)
+                + (1.0 - sloPlasmaExtinction[1]) * slo_cylinder_diffuse(pos, normal, sloPlasmaStart1, sloPlasmaAxis1, sloPlasmaFlow1, day)
+                + (1.0 - sloPlasmaExtinction[2]) * slo_cylinder_diffuse(pos, normal, sloPlasmaStart2, sloPlasmaAxis2, sloPlasmaFlow2, day)
+                + (1.0 - sloPlasmaExtinction[3]) * slo_cylinder_diffuse(pos, normal, sloPlasmaStart3, sloPlasmaAxis3, sloPlasmaFlow3, day);
+#ifdef SLO_PHOTON_PLASMA_SHADOW
+    // Use the already-shadowed field so blocked and unlit surfaces retain their daylight.
+    sloPlasmaDayMix = day * (1.0 - exp(-3.0 * max(total, 0.0)));
+#endif
+    return mix(vec3(4.0, 0.46, 0.10), vec3(12.0, 0.80, 0.16), day) * total;
+}
+
 vec3 get_slo_lighting(vec3 scene_pos, vec3 normal, vec3 flat_normal, float ao, float skylight,
                         vec3 albedo) {
     sloFieldSkylight = skylight;
@@ -1225,7 +1297,8 @@ vec3 get_slo_lighting(vec3 scene_pos, vec3 normal, vec3 flat_normal, float ao, f
     // nothing below has a cost that is independent of how many lights there are. The branch is uniform,
     // so the derivatives taken below it are still well defined: every fragment of a draw takes the same
     // side.
-    if (sloLightCount <= 0) return vec3(0.0);
+    vec3 cylinderLight = slo_plasma_surface(scene_pos, normal);
+    if (sloLightCount <= 0) return cylinderLight;
     // How much world space one pixel covers at this fragment, taken once before any branch: derivatives are
     // only defined in uniform control flow. The lamp's own block is culled by a test on the reconstructed
     // scene position, and at a grazing angle one pixel spans a large slice of the world; a transition of fixed
@@ -1235,7 +1308,7 @@ vec3 get_slo_lighting(vec3 scene_pos, vec3 normal, vec3 flat_normal, float ao, f
     float selfFootprint = max(length(dFdx(scene_pos)), length(dFdy(scene_pos)));
     // Positive by the guard at the head of this function.
     int live = min(sloLightCount, SLO_LIGHTS);
-    vec3 total = vec3(0.0);
+    vec3 total = cylinderLight;
     if (live > 0) total += slo_slot(sloLight0, sloShape0, sloAxis0, sloTint0, sloDecay0.x, 0, scene_pos, normal, flat_normal, ao, selfFootprint, sloStyle0, sloCone0);
     if (live > 1) total += slo_slot(sloLight1, sloShape1, sloAxis1, sloTint1, sloDecay0.y, 1, scene_pos, normal, flat_normal, ao, selfFootprint, sloStyle1, sloCone1);
     if (live > 2) total += slo_slot(sloLight2, sloShape2, sloAxis2, sloTint2, sloDecay0.z, 2, scene_pos, normal, flat_normal, ao, selfFootprint, sloStyle2, sloCone2);

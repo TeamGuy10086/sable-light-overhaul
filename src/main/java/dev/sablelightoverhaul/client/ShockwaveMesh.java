@@ -1,5 +1,6 @@
 package dev.sablelightoverhaul.client;
 
+import dev.sablelightoverhaul.BlastVisualScale;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -128,7 +129,7 @@ public final class ShockwaveMesh {
                 : RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS;
         if (event.getStage() != wanted) return;
         if (!ExtraConfig.SHOCKWAVE_ENABLED.get()) return;
-        if (ExtraConfig.SHOCKWAVE_MODE.get() == ShockwaveMode.PARTICLES) return;
+        if (ExtraConfig.effectiveShockwaveMode() == ShockwaveMode.PARTICLES) return;
         List<Shockwave.Wave> waves = Shockwave.waves();
         if (waves.isEmpty()) return;
         Minecraft minecraft = Minecraft.getInstance();
@@ -217,7 +218,7 @@ public final class ShockwaveMesh {
         // charge still throws a wave, and the ladder stays monotonic and continuous.
         double calibrated = Math.max(0.0, power) / 24.0;
         double curve = calibrated <= 0.0 ? 0.0 : Math.pow(calibrated, 0.8);
-        return Math.max(2.0, curve * 60.0 * Math.max(0.0, coefficient));
+        return Math.max(2.0, curve * 60.0 * Math.max(0.0, coefficient) * BlastVisualScale.dimensions(power));
     }
 
     /** One wave: the shells between its inner and outer radius, with the limb term per vertex.

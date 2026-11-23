@@ -32,6 +32,8 @@ public final class DebugFlares {
  @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event){dimension=null;states=List.of();}
  private static boolean active(ClientLevel level){return level!=null && level.dimension().location().equals(dimension);}
  static boolean hasStates(){return !states.isEmpty() && active(Minecraft.getInstance().level);}
+ /** Reserved shader slots, including expired entries until the next authoritative update. */
+ static int reservedGlowSlots(){return active(Minecraft.getInstance().level)?states.size():0;}
  private static double age(FlarePayload.State s,ClientLevel level,double partial){return Math.max(0,(level.getGameTime()-s.bornTick()+partial)/20.0);}
  private static double brightness(FlarePayload.State s,ClientLevel level,double partial){return FlareMotion.brightness(s.id(),age(s,level,partial),s.durationTicks()/20.0);}
  private static int palette(FlarePayload.State s){return s.illumination()?SourceColor.WARM:SourceColor.CUSTOM|s.rgb();}

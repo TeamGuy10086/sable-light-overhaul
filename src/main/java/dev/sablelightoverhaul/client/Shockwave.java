@@ -76,7 +76,7 @@ public final class Shockwave {
   if(level==null)return;
   if(event.cancellation().blocks(EffectApi.Section.SPAWN_PARTICLES,DefaultSpecs.SPAWN_RING))return;
   // MESH means this player asked for the sphere alone: a rendering preference, not an event decision.
-  if(ExtraConfig.SHOCKWAVE_MODE.get()==ExtraConfig.ShockwaveMode.MESH)return;
+  if(ExtraConfig.effectiveShockwaveMode()==ExtraConfig.ShockwaveMode.MESH)return;
   ShockwaveRing.burst(level,event);
   ringBursts++;
  }
@@ -91,7 +91,7 @@ public final class Shockwave {
  private static void detonationWave(EffectApi.ImpactEvent event){
   if(clientLevel(event)==null)return;
   if(event.cancellation().blocks(EffectApi.Section.SPAWN_PARTICLES,DefaultSpecs.SPAWN_MESH))return;
-  if(ExtraConfig.SHOCKWAVE_MODE.get()==ExtraConfig.ShockwaveMode.PARTICLES)return;
+  if(ExtraConfig.effectiveShockwaveMode()==ExtraConfig.ShockwaveMode.PARTICLES)return;
   float size=(float)ShockwaveMesh.meshRadius(event.yield(),ExtraConfig.SHOCKWAVE_MESH_SIZE.get());
         // The configured duration is the time the calibration charge (power 24, 60 blocks) takes; every other charge
         // gets the time its own radius implies at that same speed. A fixed duration made a small wave cross its shorter
@@ -122,7 +122,7 @@ public final class Shockwave {
   if(owner!=level){ACTIVE.clear();owner=level;ShockwaveRing.clear();}
   if(!level.dimension().location().equals(payload.dimension()))return;
   if(!ExtraConfig.SHOCKWAVE_ENABLED.get())return;
-  ExtraConfig.ShockwaveMode mode=ExtraConfig.SHOCKWAVE_MODE.get();
+  ExtraConfig.ShockwaveMode mode=ExtraConfig.effectiveShockwaveMode();
   // Nothing is suppressed here on purpose: a blast is always spawned, and whether any given particle is
   // visible is decided per particle per frame (particles spread far vertically, so a blast centre says
   // nothing about where they end up).

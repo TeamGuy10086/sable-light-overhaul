@@ -16,6 +16,7 @@
   "client": [
     "FlakCloudBudgetMixin",
     "ManagedAutocannonRenderMixin",
-    "NavalTracerGlowMixin"
+    "NavalTracerGlowMixin",
+    "ShellExplosionTrailMixin"
   ]
 }

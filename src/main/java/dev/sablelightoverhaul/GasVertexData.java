@@ -15,6 +15,8 @@ public final class GasVertexData {
     public static int ribbonLight(int packed) { return (packed & ~0x000F000F)|0x000B000B; }
     /** Streak-only marker: preserve actual position beyond the terrain far plane. */
     public static int streakLight(int packed) { return (packed & ~0x000F000F)|0x000B000A; }
+    /** Plasma uses an independent HDR emission material in Photon and Complementary. */
+    public static int plasmaLight(int packed) { return (packed & ~0x000F000F) | 0x000B0009; }
     // Signed logarithmic coordinate, decoded at vertices BEFORE interpolation.
     // Retains near-axis precision even for a long thin volume seen obliquely.
     public static int light(double transverse) { return light(transverse,0); }

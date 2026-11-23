@@ -6,7 +6,7 @@ Lighting, cannon effects and distant rendering for Create: Big Cannons on Minecr
 
 SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights, with dedicated shader adapters and a shader-free lighting backend. Configure effects, devices and budgets through **F9**. Interface labels, item names and descriptions support English and Simplified Chinese.
 
-**Current release line: 0.3.2 · internal mod version: 0.1.638.** Release filenames and Minecraft's internal version can differ intentionally.
+**Development build 0.1.716.** Public release numbers and Minecraft's internal version can differ.
 
 ## Features
 
@@ -17,6 +17,13 @@ SLO adds configurable muzzle smoke, dust, tracers, explosions, flares and lights
 - **Sable Hostile integration:** per-turret effect controls, distant projectiles and tracers, cannon audio and turret rotation sounds. Compatible Sable Healthbar versions enable mathematical trajectory integration and native-entity handoff.
 - **Distant entity markers:** dedicated-server entities beyond client view distance can appear as occluded colored bounds, names or available portraits, with optional health display. Range is bounded by server view distance and the configured request range; this does not load extra terrain or provide full entity simulation.
 - **Global wind:** fixed or slowly varying wind drives effects that support the wind field.
+
+## Explosion visuals
+
+- **Ground bursts** use a compact fireball that rises, expands and erodes into smoke, a ground-level dust fan and configurable outward dust columns. **Buried bursts** use the detected outlet and a smaller fireball for shallow vents. **Airbursts** use a smaller fireball and fine sparks in all directions. Missile interceptions have their own visual path.
+- The custom impact particle set starts at explosion power 6. MW medium HE uses 6 and CBC standard HE uses 8 for block damage. Vanilla TNT uses its own particles and can still draw the SLO mesh shockwave.
+- In **F9 → CBC HE visuals**, adjust ground fireball growth and rise, dust-column shape, and the optional height scaling by blocks actually destroyed. Smoke quality uses the existing muzzle-smoke slider without shaders or with patched Photon Advanced.
+- Photon updates for this build include the cached cold-smoke lighting path and the explosion smoke material. Use the patch that matches the mod build. A thin Photon cloud layer has intermittently shown through smoke and is still awaiting a reproducible scene.
 
 ## Requirements and installation
 

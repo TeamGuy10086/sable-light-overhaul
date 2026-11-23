@@ -4,6 +4,7 @@
   "package": "dev.sablelightoverhaul.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BlastDamageTrackingMixin",
     "BigCannonMixin",
     "AutocannonMixin",
     "FarEntityTrackingMixin"
@@ -23,10 +24,13 @@
     "ParticleDepthSortMixin",
     "ParticlePositionAccessor",
     "ParticleEngineAccessor",
+    "FlywheelTracerFrameMixin",
     "ParticleLifetimeAccessor",
     "BlockHitEffectMixin",
     "FieldBlockChangeMixin",
-    "FieldChunkDataMixin"
+    "FieldChunkDataMixin",
+    "MissileSmokeMeshMixin",
+    "PhotonSmokeDrawMixin"
   ],
   "injectors": {
     "defaultRequire": 1

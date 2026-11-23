@@ -524,7 +524,12 @@ public final class IrisMuzzleBridge {
 
     private static final Vector4f TANK_GAS_SCALE=new Vector4f(),BIG_GAS_SCALE=new Vector4f();
     private static final Vector4f AUTO_GAS_A=new Vector4f(),AUTO_GAS_B=new Vector4f();
+    private static final java.util.Set<FrameUpdateNotifier> MISSILE_GLOW_NOTIFIERS =
+            java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
     public static void register(UniformHolder holder, FrameUpdateNotifier notifier) {
+        // Register once per pipeline, not once per shader program. Keep optional Iris linkage here.
+        if (MISSILE_GLOW_NOTIFIERS.add(notifier)) notifier.addListener(PackMissileGlows::invalidate);
+        PackMissileGlows.invalidate();
         holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloBigGasScale",()-> {
             float core=MuzzleClientConfig.BIG_CORE_SCALE.get().floatValue(),gas=MuzzleClientConfig.BIG_GAS_SCALE.get().floatValue(),jet=MuzzleClientConfig.BIG_JET_SCALE.get().floatValue();
             return BIG_GAS_SCALE.set(core,gas,jet,Math.max(core,Math.max(gas,jet)));
@@ -539,6 +544,8 @@ public final class IrisMuzzleBridge {
         // strength 0 as the exact 0.1.505 stream, so these two uniforms are also the live A/B switch.
         holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloSmokePerformance",()-> SmokeBenchmark.performanceEnabled()?1:0);
         holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloSmokeEdgeCull",()-> BigSmokeConfig.SOFT_EDGE_CULL.get()?1:0);
+        holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloCachedSmokeSimpleLighting",
+            ()-> MuzzleClientConfig.CACHED_SMOKE_SIMPLE_LIGHTING.get()?1:0);
         holder.uniform1f(UniformUpdateFrequency.PER_FRAME,"sloSmokeEdgeThreshold",
             () -> BigSmokeConfig.SOFT_EDGE_THRESHOLD.get().floatValue());
         holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloSmokeOptions",()-> SMOKE_OPTIONS.set(
@@ -588,6 +595,16 @@ public final class IrisMuzzleBridge {
             holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloWaveB" + waveIndex,
                     () -> ShockwaveMesh.waveVector(waveIndex, false));
         }
+        holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloPlasmaExtinction", LaserTestRenderer::extinctionUniform);
+        for (int slot = 0; slot < LaserTestRenderer.VOLUME_SLOTS; slot++) {
+            final int index = slot;
+            holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloPlasmaStart" + slot,
+                () -> LaserTestRenderer.volumeUniform(index, true));
+            holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloPlasmaAxis" + slot,
+                () -> LaserTestRenderer.volumeUniform(index, false));
+            holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloPlasmaFlow" + slot,
+                () -> LaserTestRenderer.flowUniform(index));
+        }
         // Spotlight beams and their aperture glow, one numbered sextet per slot (A..F). Numbered vec4s, never
         // arrays: an array uniform has never resolved in this pack.
         for (int beam = 0; beam < MAX_BEAMS; beam++) {
@@ -603,6 +620,8 @@ public final class IrisMuzzleBridge {
             holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloBeamF" + beamIndex, () -> BEAM_F[beamIndex]);
             holder.uniform4f(UniformUpdateFrequency.PER_FRAME, "sloBeamG" + beamIndex, () -> BEAM_G[beamIndex]);
         }
+        holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sloPlasmaVolumeMix",
+                () -> ExtraConfig.PLASMA_VOLUME_MIX.get().floatValue());
         holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sloBeamVolume",
                 () -> ExtraConfig.BEAM_VOLUME.get().floatValue());
         holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sloBeamGlow",
@@ -618,10 +637,12 @@ public final class IrisMuzzleBridge {
                 () -> ExtraConfig.BEAM_DEBUG.get().floatValue());
         holder.uniform1f(UniformUpdateFrequency.PER_FRAME,"slo_flareGlowShrinkDistance",
                 () -> ExtraConfig.FLARE_GLOW_SHRINK_DISTANCE.get().floatValue());
-        for(int i=0;i<dev.sablelightoverhaul.FlarePayload.MAX_FLARES;i++) {
+        holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloFlareCount",PackMissileGlows::count);
+        holder.uniform1i(UniformUpdateFrequency.PER_FRAME,"sloMissileGlowCount",PackMissileGlows::missileCount);
+        for(int i=0;i<dev.sablelightoverhaul.MissileGlowPolicy.PACK_SLOTS;i++) {
             final int index=i;
-            holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloFlareA"+i,()->DebugFlares.position(index));
-            holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloFlareC"+i,()->DebugFlares.color(index));
+            holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloFlareA"+i,()->PackMissileGlows.position(index));
+            holder.uniform4f(UniformUpdateFrequency.PER_FRAME,"sloFlareC"+i,()->PackMissileGlows.color(index));
         }
         // Refraction and dispersion of the wave front, consumed by the patched shader pack.
         holder.uniform1f(UniformUpdateFrequency.PER_FRAME, "sloWaveRefract",

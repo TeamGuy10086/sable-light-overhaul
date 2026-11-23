@@ -24,10 +24,8 @@ import net.minecraft.world.phys.BlockHitResult;
  * <p>Empty hand opens its page, which owns every setting; the management tool stays a shortcut for the
  * two that get changed while building (falloff profile and hiding the model). The range is on the page.
  *
- * <p>Range, falloff and visibility live in the block state because the server reads the first two out
- * of it to build the beam and the render shape reads the third; everything else is in the lamp's block
- * entity. The beam itself always leaves the block's own local +Y, tilted by whatever aim the lamp is
- * set to, which is what lets a lamp on a moving hull keep aiming with the hull.
+ * <p>Range is stored in the block entity, avoiding 1024 copies of every block state.
+ * Falloff and visibility remain state properties. Old serialized ranges are migrated before decoding.
  *
  * <p>The block state's FACING is what the block was placed against and is not used: it is kept so old
  * worlds keep loading, and deliberately not given a meaning now, because every spotlight already placed
@@ -39,13 +37,13 @@ public final class SpotlightBlock extends BaseEntityBlock {
  public static final DirectionProperty FACING=BlockStateProperties.FACING;
  // Five is the ceiling because MODES below has six entries, the last being the physical inverse square
  // at index 5. A property that stopped at four made the page offer a profile the block could not store.
- public static final IntegerProperty RANGE=IntegerProperty.create("range",1,1024),MODE=IntegerProperty.create("mode",0,5);
+ public static final IntegerProperty MODE=IntegerProperty.create("mode",0,5);
  public static final BooleanProperty VISIBLE=BooleanProperty.create("visible");
  /** Falloff profiles; index matches the MODE blockstate. The last one is disabled -- see {@link Falloff}. */
  public static final String[] MODES=dev.sablelightoverhaul.Falloff.NAMES;
- public SpotlightBlock(){super(Properties.ofFullCopy(Blocks.BEACON).lightLevel(s->0));registerDefaultState(stateDefinition.any().setValue(FACING,Direction.UP).setValue(RANGE,1).setValue(MODE,0).setValue(VISIBLE,true));}
+ public SpotlightBlock(){super(Properties.ofFullCopy(Blocks.BEACON).lightLevel(s->0));registerDefaultState(stateDefinition.any().setValue(FACING,Direction.UP).setValue(MODE,0).setValue(VISIBLE,true));}
  @Override protected MapCodec<? extends BaseEntityBlock> codec(){return CODEC;}
- @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState>b){b.add(FACING,RANGE,MODE,VISIBLE);}
+ @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block,BlockState>b){b.add(FACING,MODE,VISIBLE);}
  @Override public BlockState getStateForPlacement(BlockPlaceContext c){return defaultBlockState().setValue(FACING,c.getClickedFace());}
  @Override public BlockEntity newBlockEntity(BlockPos pos,BlockState state){return new SpotlightBlockEntity(pos,state);}
  /** Only the server needs to tick, and only the latch needs that. */
@@ -72,8 +70,17 @@ public final class SpotlightBlock extends BaseEntityBlock {
  @Override public void setPlacedBy(Level level,BlockPos pos,BlockState state,LivingEntity placer,ItemStack stack){
   if(level.isClientSide)return;
   BlockOwners.placed(level,pos,placer);
-  if(level.getBlockEntity(pos) instanceof SpotlightBlockEntity lamp)
-   lamp.setNumber("azimuth",Mth.wrapDegrees(90.0-placer.getYRot()));
+  if(level.getBlockEntity(pos) instanceof SpotlightBlockEntity lamp){
+   // Old pick-block/item stacks may still carry range in minecraft:block_state.
+   var properties=stack.get(net.minecraft.core.component.DataComponents.BLOCK_STATE);
+   var entityData=stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+   var saved=entityData==null?new net.minecraft.nbt.CompoundTag():entityData.copyTag();
+   if(properties!=null&&!saved.contains("range")&&!saved.contains("slo_we_range")){
+    String legacy=properties.properties().get("range");
+    if(legacy!=null)try{lamp.setNumber("range",Integer.parseInt(legacy));}catch(NumberFormatException ignored){}
+   }
+   if(placer!=null)lamp.setNumber("azimuth",Mth.wrapDegrees(90.0-placer.getYRot()));
+  }
  }
  @Override protected void onPlace(BlockState s,Level l,BlockPos p,BlockState old,boolean moving){super.onPlace(s,l,p,old,moving);if(l instanceof ServerLevel server)RegisteredSources.get(server).spotlight(SourceAnchor.capture(l,p),true);}
  @Override protected void onRemove(BlockState s,Level l,BlockPos p,BlockState next,boolean moving){if(!next.is(this)&&l instanceof ServerLevel server)RegisteredSources.get(server).spotlight(SourceAnchor.capture(l,p),false);super.onRemove(s,l,p,next,moving);}

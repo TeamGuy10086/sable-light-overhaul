@@ -40,6 +40,7 @@ public final class ExplosionLights {
   // listener is called synchronously and reads nothing after it returns.
   EffectBus.terrainChanged(new EffectApi.TerrainEvent(impact.level(),impact.center(),
     event.getExplosion().radius(),event.getAffectedBlocks(),EffectApi.Cause.EXPLOSION));
+  if (!BlastDebugItem.onDetonate(event)) BlastDebugItem.sendImpactVisual(impact, event.getExplosion());
   EffectBus.impact(impact);
  }
 }

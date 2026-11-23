@@ -33,10 +33,11 @@ final class TankAfterSmokeParticle extends TextureSheetParticle {
         float roll=(float)node.roll(partial);
         int light=super.getLightColor(partial);
         if(MuzzleParticleLayer.proceduralSmoke()){
-            if(MuzzleClientConfig.TANK_SMOKE_CACHED.get() && MuzzleParticleLayer.mode()!=MuzzleParticleLayer.Mode.SINGLE)
+            if(MuzzleClientConfig.TANK_SMOKE_CACHED.get() && MuzzleParticleLayer.mode()!=MuzzleParticleLayer.Mode.SINGLE){
+                if(SmokeResolution.capture(this))return;
                 MuzzleSmokeMesh.drawCachedPuff(out,camera,x,y,z,xo,yo,zo,partial,
                     radius*aspect,radius/aspect,roll,node.materialSeed,.64f,.63f,.61f,alpha,GasVertexData.smokeLight(light));
-            else MuzzleSmokeMesh.drawPuffShaped(out,camera,x,y,z,xo,yo,zo,partial,
+            }else MuzzleSmokeMesh.drawPuffShaped(out,camera,x,y,z,xo,yo,zo,partial,
                 radius*aspect,radius/aspect,roll,node.materialSeed,
                 .64f,.63f,.61f,alpha,GasVertexData.smokeLight(light));
         }else{

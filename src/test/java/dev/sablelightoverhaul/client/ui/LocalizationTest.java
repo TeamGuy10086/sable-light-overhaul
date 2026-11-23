@@ -40,7 +40,7 @@ class LocalizationTest {
                 for (var field : group.fields()) {
                     assertTrue(en.containsKey(field.labelKey()), field.key());
                     if (field.tooltip().matches("(?s).*[\\p{IsHan}].*")) {
-                        assertTrue(en.containsKey(LocalizedText.key(field.tooltip())), field.key() + " tooltip");
+                        assertTrue(en.containsKey(LocalizedText.key(field.tooltip())), field.key() + " tooltip " + LocalizedText.key(field.tooltip()) + " " + field.tooltip());
                     }
                 }
             }

@@ -28,12 +28,18 @@ public record FlashPayload(ResourceLocation dimension, double x, double y, doubl
         implements CustomPacketPayload {
     // The mount slot is unused when hasMount is false. Reuse it without changing the packet layout.
     static final long HALF_SIZE_FIREBALL = 1L;
+    static final long GROUPED_MUZZLE = 2L;
+
+    public boolean groupedMuzzle() {
+        return !hasMount && mountPos == GROUPED_MUZZLE;
+    }
 
     public float fireballSizeScale() {
         return !hasMount && mountPos == HALF_SIZE_FIREBALL ? 0.5f : 1.0f;
     }
 
     /** How many numbers a form is. */
+    public static final int EXPLOSION_LIGHT = 5;
     public static final int PROFILE_SLOTS = 14;
     /**
      * What those numbers are, in order, named exactly as an exported form names them, so a value read here and

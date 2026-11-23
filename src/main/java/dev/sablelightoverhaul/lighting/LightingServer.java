@@ -84,7 +84,7 @@ var appearance=!e.spotlight()&&level.getBlockEntity(pos) instanceof LightSourceB
     // sixteen the driver alone could offer.
     coneTenths=(int)Math.round(lamp.coneDegrees(widthDriver)*10);
    offX=(float)lamp.offsetX();offY=(float)lamp.offsetY();offZ=(float)lamp.offsetZ();
-    distance=Math.max(1,Math.min(1024,state.getValue(SpotlightBlock.RANGE)));
+    distance=lamp.range();
     beamMode=state.getValue(SpotlightBlock.MODE);
     azimuth=(float)lamp.azimuth();
    }

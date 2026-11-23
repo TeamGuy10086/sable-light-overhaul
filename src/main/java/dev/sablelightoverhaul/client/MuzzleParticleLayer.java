@@ -68,6 +68,7 @@ public final class MuzzleParticleLayer {
     public static int markLight(int packed, boolean flame) {
         return ClientFlashes.inPackLighting() ? dev.sablelightoverhaul.GasVertexData.materialLight(packed,flame) : packed;
     }
+    public static boolean ribbonReady() { return ClientFlashes.inPackLighting() || (!IrisCompat.shaderPackInUse() && shader != null); }
     public static boolean proceduralGas() {
         // Fragment ray integration needs the pack's opaque/LOD depth. Other packs/native use the geometric fallback.
         return ClientFlashes.inPackLighting();
@@ -84,9 +85,10 @@ public final class MuzzleParticleLayer {
         shader.safeGetUniform("uHasLod").set(lod > 0 ? 1 : 0);
         shader.safeGetUniform("uLodZeroToOne").set(NativeVoxyDepth.zeroToOne());
         shader.safeGetUniform("uInvLodViewProj").set(NativeVoxyDepth.inverse());
-        shader.safeGetUniform("sloNativeScreenSize").set((float) target.width, (float) target.height);
+        shader.safeGetUniform("sloNativeScreenSize").set((float) SmokeResolution.screenWidth(target.width), (float) SmokeResolution.screenHeight(target.height));
         shader.setSampler("sloSmokeAtlas",SmokeFlipbook.texture());
         shader.setSampler("sloTankSmokeAtlas",SmokeFlipbook.tankTexture());
+        shader.setSampler("sloDustColumnAtlas",SmokeFlipbook.dustColumnTexture());
         boolean smokePerformance = SmokeBenchmark.performanceEnabled();
         shader.setSampler("sloSmokeMask",smokePerformance ? SmokeFlipbook.maskTexture() : 0);
         shader.safeGetUniform("sloSmokePerformance").set(smokePerformance ? 1 : 0);

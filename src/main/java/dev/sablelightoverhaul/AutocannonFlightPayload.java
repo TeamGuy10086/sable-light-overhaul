@@ -21,18 +21,28 @@ public record AutocannonFlightPayload(ResourceLocation dimension, UUID session, 
         segments = List.copyOf(segments);
     }
 
-    public record Segment(long number, Vec3 from, Vec3 to, boolean flak) {
+    public record Segment(long number, Vec3 from, Vec3 to, boolean flak, int phaseFifths, boolean terminal) {
+        public Segment(long number, Vec3 from, Vec3 to, boolean flak) {
+            this(number, from, to, flak, 0);
+        }
+        public Segment(long number, Vec3 from, Vec3 to, boolean flak, int phaseFifths) {
+            this(number, from, to, flak, phaseFifths, false);
+        }
         public Segment {
             if (number <= 0 || number >= Long.MAX_VALUE - Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("Invalid autocannon flight id");
             }
+            if (phaseFifths < 0 || phaseFifths > 4) throw new IllegalArgumentException("Invalid launch phase");
         }
 
         /** Separate from CBC entity ids (int) and the predicted Healthbar visuals (negative long). */
         public long visualId() { return Long.MAX_VALUE - number; }
     }
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, AutocannonFlightPayload> CODEC = StreamCodec.of(
+    public static final StreamCodec<RegistryFriendlyByteBuf, AutocannonFlightPayload> CODEC = codec(false);
+
+    private static StreamCodec<RegistryFriendlyByteBuf, AutocannonFlightPayload> codec(boolean phased) {
+      return StreamCodec.of(
         (buf, payload) -> {
             buf.writeResourceLocation(payload.dimension);
             buf.writeUUID(payload.session);
@@ -42,6 +52,7 @@ public record AutocannonFlightPayload(ResourceLocation dimension, UUID session, 
                 vector(buf, segment.from);
                 vector(buf, segment.to);
                 buf.writeBoolean(segment.flak);
+                if (phased) buf.writeByte(segment.phaseFifths | (segment.terminal ? 8 : 0));
             }
         }, buf -> {
             var dimension = buf.readResourceLocation();
@@ -50,10 +61,33 @@ public record AutocannonFlightPayload(ResourceLocation dimension, UUID session, 
             if (size < 0 || size > LIMIT) throw new IllegalArgumentException("Invalid autocannon flight batch size");
             var segments = new ArrayList<Segment>(size);
             for (int i = 0; i < size; i++) {
-                segments.add(new Segment(buf.readVarLong(), vector(buf), vector(buf), buf.readBoolean()));
+                long number = buf.readVarLong();
+                Vec3 from = vector(buf), to = vector(buf);
+                boolean flak = buf.readBoolean();
+                int flags = phased ? buf.readUnsignedByte() : 0;
+                if ((flags & ~15) != 0) throw new IllegalArgumentException("Invalid autocannon segment flags");
+                segments.add(new Segment(number, from, to, flak, flags & 7, (flags & 8) != 0));
             }
             return new AutocannonFlightPayload(dimension, session, segments);
         });
+    }
+
+    public record Phased(AutocannonFlightPayload data) implements CustomPacketPayload {
+        public static final Type<Phased> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(SableLightOverhaul.ID, "autocannon_confirmed_flight_phased"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Phased> CODEC =
+            codec(true).map(Phased::new, Phased::data);
+        @Override public Type<Phased> type() { return TYPE; }
+    }
+
+    /** Negotiates render sampling for direct autocannons. Other autocannons retain the confirmed feed. */
+    public record Sampled(AutocannonFlightPayload data) implements CustomPacketPayload {
+        public static final Type<Sampled> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(SableLightOverhaul.ID, "autocannon_sampled_flight"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Sampled> CODEC =
+            codec(true).map(Sampled::new, Sampled::data);
+        @Override public Type<Sampled> type() { return TYPE; }
+    }
 
     private static void vector(RegistryFriendlyByteBuf buf, Vec3 v) {
         buf.writeDouble(v.x); buf.writeDouble(v.y); buf.writeDouble(v.z);

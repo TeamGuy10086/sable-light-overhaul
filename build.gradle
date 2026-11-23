@@ -3,7 +3,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 group = 'dev.sablelightoverhaul'
-version = '0.1.649'
+version = '0.1.716'
 base { archivesName = 'sable-light-overhaul' }
 java { toolchain.languageVersion = JavaLanguageVersion.of(21); withSourcesJar() }
 neoForge {
@@ -13,7 +13,10 @@ neoForge {
 }
 repositories { mavenCentral() }
 dependencies {
+    // Optional WorldEdit schematic migration; never bundled in the mod.
+    compileOnly files('libs/worldedit.jar')
     compileOnly fileTree(dir: 'libs/cbc-deps', include: '*.jar')
+    compileOnly files('libs/flywheel.jar')
     compileOnly files('libs/create.jar', 'libs/cbc.jar', 'libs/sable.jar', 'libs/sable-companion.jar')
     // AFN (Create: Advanced Frequency Network) is optional: its channel API is compile-only, and every
     // reference to it sits behind a presence check in dev.sablelightoverhaul.lighting.channel.

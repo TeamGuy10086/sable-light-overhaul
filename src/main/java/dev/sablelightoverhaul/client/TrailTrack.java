@@ -1,6 +1,7 @@
 package dev.sablelightoverhaul.client;
 
 import dev.sablelightoverhaul.AutocannonFlightPayload;
+import dev.sablelightoverhaul.AutocannonTrackPayload;
 import dev.sablelightoverhaul.SableLightOverhaul;
 import dev.sablelightoverhaul.ShellTrackPayload;
 import net.minecraft.client.Minecraft;
@@ -62,7 +63,13 @@ public final class TrailTrack {
     dev.sablelightoverhaul.effects.DefaultSpecs.PROJECTILE_STREAK))return;
   for(var host:event.hosts())ProjectileStreaks.accept(level,host);
  }
- public static void receiveAutocannon(dev.sablelightoverhaul.AutocannonTrackPayload payload){
+ public static void receiveAutocannon(AutocannonTrackPayload payload){
+  receiveAutocannon(payload,java.util.Map.of());
+ }
+ public static void receivePhasedAutocannon(AutocannonTrackPayload.Phased payload){
+  receiveAutocannon(payload.data(),payload.phases());
+ }
+ private static void receiveAutocannon(AutocannonTrackPayload payload,java.util.Map<Integer,Integer> phases){
   ClientLevel level=Minecraft.getInstance().level;
   if(level==null||!level.dimension().location().equals(payload.data().dimension()))return;
   var filtered=payload.data().shells().stream().filter(s->!HealthbarFlightBridge.suppress(level,s.id(),s.carrier())).toList();
@@ -70,13 +77,17 @@ public final class TrailTrack {
   for(var s:filtered){
    // Entity existence is not render visibility: CBC stops drawing before it is untracked.
    // One SLO streak owns all distances while available; the native renderer remains a fallback.
-   ProjectileStreaks.accept(level,new dev.sablelightoverhaul.api.EffectApi.Host(s.id(),
-    new Vec3(s.px(),s.py(),s.pz()),new Vec3(s.x(),s.y(),s.z()),new Vec3(s.mx(),s.my(),s.mz()),0,0,true),true,payload.flakIds().contains(s.id()));
+   ProjectileStreaks.acceptPhasedAutocannon(level,new dev.sablelightoverhaul.api.EffectApi.Host(s.id(),
+    new Vec3(s.px(),s.py(),s.pz()),new Vec3(s.x(),s.y(),s.z()),new Vec3(s.mx(),s.my(),s.mz()),0,0,true),
+    payload.flakIds().contains(s.id()),phases.getOrDefault(s.id(),0));
   }
  }
- public static boolean hasConfirmedAutocannonFeed(){
+ public static boolean hasConfirmedAutocannonFeed(boolean requiresPhases){
   var connection=Minecraft.getInstance().getConnection();
-  return connection!=null&&connection.hasChannel(AutocannonFlightPayload.TYPE);
+  if(connection==null)return false;
+  if(connection.hasChannel(AutocannonFlightPayload.Sampled.TYPE))return !requiresPhases;
+  return connection.hasChannel(AutocannonFlightPayload.Phased.TYPE)
+   ||!requiresPhases&&connection.hasChannel(AutocannonFlightPayload.TYPE);
  }
  public static void receiveConfirmedAutocannon(AutocannonFlightPayload payload){
   var level=Minecraft.getInstance().level;
@@ -87,8 +98,9 @@ public final class TrailTrack {
    confirmedSession=payload.session();
   }
   for(var segment:payload.segments()){
-   ProjectileStreaks.accept(level,new dev.sablelightoverhaul.api.EffectApi.Host(segment.visualId(),
-       segment.from(),segment.to(),segment.to().subtract(segment.from()),0,0,true),true,segment.flak());
+   ProjectileStreaks.acceptPhasedAutocannon(level,new dev.sablelightoverhaul.api.EffectApi.Host(segment.visualId(),
+       segment.from(),segment.to(),segment.to().subtract(segment.from()),0,0,true),segment.flak(),segment.phaseFifths());
+   if(segment.terminal())ProjectileStreaks.finish(segment.visualId());
   }
  }
  /** The receiver the mod's network hook calls; no client class is resolved on a dedicated server. */
@@ -157,6 +169,10 @@ public final class TrailTrack {
    laid++;
   }
   shellsDrawn++;
+ }
+ @SubscribeEvent public static void beginFrame(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event){
+  var mc=Minecraft.getInstance();
+  ProjectileStreaks.beginFrame(mc.level,mc.getTimer().getGameTimeDeltaPartialTick(false));
  }
  @SubscribeEvent public static void tick(ClientTickEvent.Post event){
   var mc=Minecraft.getInstance();

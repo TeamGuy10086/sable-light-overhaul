@@ -14,6 +14,11 @@ public final class LightingBlocks {
  public static final DeferredRegister<Block> BLOCKS=DeferredRegister.create(Registries.BLOCK,SableLightOverhaul.ID);
  public static final DeferredRegister<Item> ITEMS=DeferredRegister.create(Registries.ITEM,SableLightOverhaul.ID);
  public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES=DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE,SableLightOverhaul.ID);
+ public static final DeferredHolder<Block,LaserTestBlock> LASER_TEST=BLOCKS.register("laser_test",LaserTestBlock::new);
+ public static final DeferredHolder<Item,Item> LASER_TEST_ITEM=ITEMS.register("laser_test",
+  () -> new BlockItem(LASER_TEST.get(),lore(new Item.Properties(),"sablelightoverhaul.laser_test.lore")));
+ public static final DeferredHolder<BlockEntityType<?>,BlockEntityType<LaserTestBlockEntity>> LASER_TEST_ENTITY=
+  BLOCK_ENTITIES.register("laser_test",() -> BlockEntityType.Builder.of(LaserTestBlockEntity::new,LASER_TEST.get()).build(null));
  public static final DeferredHolder<Block,SpotlightBlock> SPOTLIGHT=BLOCKS.register("spotlight",SpotlightBlock::new);
  public static final DeferredHolder<Item,Item> SPOTLIGHT_ITEM=ITEMS.register("spotlight",
   ()->new BlockItem(SPOTLIGHT.get(),lore(new Item.Properties(),"sablelightoverhaul.spotlight.lore.0","sablelightoverhaul.spotlight.lore.1","sablelightoverhaul.spotlight.lore.2","sablelightoverhaul.spotlight.lore.3","sablelightoverhaul.spotlight.lore.4")));
@@ -44,6 +49,9 @@ public final class LightingBlocks {
  public static final DeferredHolder<Item,Item> FLASHLIGHT=ITEMS.register("flashlight",
   ()->new dev.sablelightoverhaul.FlashlightItem(lore(new Item.Properties().stacksTo(1),"sablelightoverhaul.flashlight.lore.0","sablelightoverhaul.flashlight.lore.1","sablelightoverhaul.flashlight.lore.2")));
  /** Opens a cannon's form: a plain right-click asks about the block clicked, a shift click searches. */
+ public static final DeferredHolder<Item,Item> BLAST_DEBUG=ITEMS.register("blast_debug",
+  ()->new dev.sablelightoverhaul.BlastDebugItem(lore(new Item.Properties().stacksTo(1),
+   "sablelightoverhaul.blast_debug.lore.0","sablelightoverhaul.blast_debug.lore.1")));
  public static final DeferredHolder<Item,Item> PROFILE_WRENCH=ITEMS.register("profile_wrench",
    () -> new Item(new Item.Properties().stacksTo(1)));
  public static final DeferredHolder<Item,Item> DUST_GENERATOR_ITEM=ITEMS.register("dust_generator",
@@ -80,6 +88,6 @@ public final class LightingBlocks {
  private static void tab(net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent e){
   // Every item the mod adds is here, markers included: the dust marker used to be registered and
   // unobtainable, which is a strange thing for a block with a page and a model to be.
-  if(e.getTabKey()==CreativeModeTabs.FUNCTIONAL_BLOCKS){e.accept(SPOTLIGHT_ITEM.get());e.accept(TOOL.get());e.accept(DUST_GENERATOR_ITEM.get());e.accept(SMOKE_GENERATOR_ITEM.get());e.accept(VORTEX_GENERATOR_ITEM.get());e.accept(VORTEX_WAND.get());e.accept(DUST_MARKER_ITEM.get());e.accept(LIGHT_SOURCE_ITEM.get());e.accept(DISCO_BALL_ITEM.get());e.accept(FLASHLIGHT.get());e.accept(PROFILE_WRENCH.get());}
+  if(e.getTabKey()==CreativeModeTabs.FUNCTIONAL_BLOCKS){e.accept(SPOTLIGHT_ITEM.get());e.accept(TOOL.get());e.accept(DUST_GENERATOR_ITEM.get());e.accept(SMOKE_GENERATOR_ITEM.get());e.accept(VORTEX_GENERATOR_ITEM.get());e.accept(VORTEX_WAND.get());e.accept(DUST_MARKER_ITEM.get());e.accept(LIGHT_SOURCE_ITEM.get());e.accept(DISCO_BALL_ITEM.get());e.accept(FLASHLIGHT.get());e.accept(PROFILE_WRENCH.get());e.accept(BLAST_DEBUG.get());e.accept(LASER_TEST_ITEM.get());}
  }
 }

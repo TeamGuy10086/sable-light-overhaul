@@ -53,7 +53,7 @@ public final class FlashStore {
         double norm = dx*dx + dy*dy + dz*dz;
         return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z)
             && Math.abs(x) <= 30_000_000 && Math.abs(z) <= 30_000_000 && Math.abs(y) <= 20_000_000
-            && Double.isFinite(norm) && norm > 1.0e-8 && norm < 1.0e8 && (kind >= 0 && kind <= 3);
+            && Double.isFinite(norm) && norm > 1.0e-8 && norm < 1.0e8 && ((kind >= 0 && kind <= 3) || kind == FlashPayload.EXPLOSION_LIGHT);
     }
     public boolean add(double x, double y, double z, double dx, double dy, double dz, int kind, long now) {
         return add(x,y,z,dx,dy,dz,kind,now,LightCurve.DEFAULT_BIG);
@@ -74,6 +74,11 @@ public final class FlashStore {
     }
     public boolean add(double x,double y,double z,double dx,double dy,double dz,int kind,long now,
                        LightCurve curve,LightLayout layout,Emitter emitter) {
+        return add(x,y,z,dx,dy,dz,kind,now,curve,layout,emitter,false);
+    }
+
+    public boolean add(double x,double y,double z,double dx,double dy,double dz,int kind,long now,
+                       LightCurve curve,LightLayout layout,Emitter emitter,boolean groupedMuzzle) {
         if (!valid(x,y,z,dx,dy,dz,kind)) return false;
         double inv = 1.0 / Math.sqrt(dx*dx+dy*dy+dz*dz);
         var flash = new Flash(++serial,x,y,z,dx*inv,dy*inv,dz*inv,kind,now,now+curve.durationTicks(),x,y,z,false,
@@ -82,7 +87,7 @@ public final class FlashStore {
         // Twin barrels can share a voxel. Only refresh the same precise autocannon muzzle;
         // retain both barrels' shot lifetimes, then merge overlapping block-light voxels downstream.
         next.removeIf(f -> f.expires <= now || (f.kind == kind && (kind != 0
-                ? f.distanceSquared(x,y,z) < 0.0001
+                ? (groupedMuzzle ? f.emitter.id() == emitter.id() : f.distanceSquared(x,y,z) < 0.0001)
                 : f.blockX() == flash.blockX() && f.blockY() == flash.blockY() && f.blockZ() == flash.blockZ())));
         if (next.size() >= limit) next.removeFirst();
         next.add(flash);

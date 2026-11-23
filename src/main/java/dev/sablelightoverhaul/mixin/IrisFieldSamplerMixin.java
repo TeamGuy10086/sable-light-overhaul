@@ -38,6 +38,8 @@ public abstract class IrisFieldSamplerMixin {
             holder.addDynamicSampler(TextureType.TEXTURE_2D,
                     dev.sablelightoverhaul.client.SmokeFlipbook::tankTexture, null, "sloTankSmokeAtlas");
             holder.addDynamicSampler(TextureType.TEXTURE_2D,
+                    dev.sablelightoverhaul.client.SmokeFlipbook::dustColumnTexture, null, "sloDustColumnAtlas");
+            holder.addDynamicSampler(TextureType.TEXTURE_2D,
                     dev.sablelightoverhaul.client.SmokeFlipbook::maskTexture, null, "sloSmokeMask");
             boolean smoke = holder.addDynamicSampler(TextureType.TEXTURE_2D,
                     dev.sablelightoverhaul.client.SmokeFlipbook::texture, null, "sloSmokeAtlas");

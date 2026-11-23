@@ -60,6 +60,11 @@ class FlameVolumeTest {
             assertTrue(v.contains("sloMuzzleTag == 12 && sloMuzzleRaw > 255 ? 3 :"));
             assertTrue(v.contains("gl_MultiTexCoord1.x - float(sloMuzzleTag)"));
             assertTrue(v.contains("if (sloMuzzleKind == 1 || sloMuzzleKind == 3 || sloMuzzleKind == 6) material_mask = 32u"));
+            assertTrue(v.contains("sloMuzzleTag == 9 ? 7 : 0"));
+            assertTrue(v.contains("if (sloMuzzleKind == 7) material_mask = 32u"));
+            if (p.endsWith("translucent")) {
+                assertTrue(f.contains("if (sloMuzzleKind == 7) material.emission = vec3(1.25)"));
+            }
             assertTrue(f.contains("return sloMuzzleKind > 0 ? 0.002 : 0.1"));
             assertTrue(f.contains("< slo_muzzle_alpha_cutoff()"));
         }

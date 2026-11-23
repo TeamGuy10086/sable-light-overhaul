@@ -7,10 +7,12 @@
     "ServerBlockLightMixin",
     "ServerParticleRangeMixin",
     "ServerLightEngineAccessor",
-    "WorldEditBlockRegistryMixin",
-    "WorldEditAdapterMixin",
     "WorldEditWorldMixin",
-    "WorldEditNativeAccessMixin"
+    "SpotlightChunkMigrationMixin",
+    "SpotlightStructureMigrationMixin",
+    "SpotlightContraptionMigrationMixin",
+    "SpotlightSableMigrationMixin",
+    "WorldEditSchematicRangeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

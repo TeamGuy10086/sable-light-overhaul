@@ -37,6 +37,7 @@ if ($text -match 'sloBeamA0') {
 
 $nl = "`n"
 $decl = "// SLO SPOTLIGHTS BEGIN // SLO_PER_LIGHT_VOLUME" + $nl
+$decl += "uniform int sloFlareCount;" + $nl
 $decl += "// Rays per side of one beam's shadow map. Must match SpotShadows.RAYS on the mod side." + $nl
 $decl += "#define SLO_SPOT_SHADOW_RAYS 32" + $nl
 $decl += "uniform sampler2D sloSpotShadow;" + $nl
@@ -44,7 +45,7 @@ $decl += "uniform float sloBeamVolume;${nl}uniform float sloBeamGlow;${nl}unifor
 for ($i = 0; $i -lt 8; $i++) {
     $decl += "uniform vec4 sloBeamA$i;${nl}uniform vec4 sloBeamB$i;${nl}uniform vec4 sloBeamC$i;${nl}uniform vec4 sloBeamD$i;${nl}uniform vec4 sloBeamE$i;${nl}uniform vec4 sloBeamF$i;${nl}uniform vec4 sloBeamG$i;${nl}"
 }
-for ($i = 0; $i -lt 16; $i++) {
+for ($i = 0; $i -lt 128; $i++) {
     $decl += "uniform vec4 sloFlareA$i;${nl}uniform vec4 sloFlareC$i;${nl}"
 }
 for ($i = 0; $i -lt 32; $i++) { $decl += "uniform vec4 sloSourceGlow$i;${nl}" }
@@ -56,6 +57,7 @@ $decl += [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'source\slo_spot
 $aperture = $nl + "    {" + $nl
 $aperture += "        ivec2 slo_asize = textureSize(colortex0, 0);" + $nl
 $aperture += "        vec2 slo_ares = vec2(slo_asize);" + $nl
+$aperture += "        vec3 sloMissileCores=vec3(0.0), sloMissileHalos=vec3(0.0);" + $nl
 $aperture += "        float slo_aaspect = slo_ares.x / max(slo_ares.y, 1.0);" + $nl
 $aperture += "        vec2 slo_auv = gl_FragCoord.xy / slo_ares;" + $nl
 $aperture += "        float slo_beamGlow = sloBeamGlow;" + $nl
@@ -109,15 +111,41 @@ for ($i = 0; $i -lt 8; $i++) {
         }
 "@
 }
-for ($i = 0; $i -lt 16; $i++) {
-    $aperture += "        fragment_color.rgb += slo_flare_glow(sloFlareA$i, sloFlareC$i, slo_auv, slo_ares) * slo_beamGlow;" + $nl
+for ($i = 0; $i -lt 128; $i++) {
+    $aperture += "        if (sloFlareCount > $i) { if ($i >= sloFlareCount-sloMissileGlowCount) slo_missile_glow(sloFlareA$i,sloFlareC$i,slo_auv,slo_ares,sloMissileCores,sloMissileHalos); else fragment_color.rgb += slo_flare_glow(sloFlareA$i, sloFlareC$i, slo_auv, slo_ares) * slo_beamGlow; }" + $nl
 }
+$aperture += "        fragment_color.rgb += (sloMissileCores+slo_missile_halo_resolve(sloMissileHalos))*slo_beamGlow;" + $nl
 for ($i = 0; $i -lt 32; $i++) {
     $aperture += "        if (sloSourceGlow$i.w > 0.5) fragment_color.rgb += slo_point_glow(vec4(sloLight$i.xyz,0.14),vec4(sloTint$i.rgb,sloLight$i.w),sloSourceGlow$i,slo_auv,slo_ares)*slo_beamGlow;" + $nl
 }
 $aperture += "    }" + $nl
 
 # Tier 0 draws nothing at all here: the aperture above still glows, which is the intended "lamp on, no shaft".
+# Plasma uses the same composite and view ray as the spotlight, with a finite cylindrical cross section.
+$decl += [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'source/slo_plasma_volume.glsl'), $utf8NoBom) + $nl
+if (!$Complementary -and !$Mellow) { $decl += [System.IO.File]::ReadAllText((Join-Path $PSScriptRoot 'source/slo_plasma_lens.glsl'), $utf8NoBom) + $nl }
+$decl += "#ifndef SLO_PLASMA_SOURCES${nl}#define SLO_PLASMA_SOURCES${nl}uniform vec4 sloPlasmaExtinction;$nl"
+for ($i = 0; $i -lt 4; $i++) {
+    $decl += "uniform vec4 sloPlasmaStart$i, sloPlasmaAxis$i, sloPlasmaFlow$i;$nl"
+}
+$decl += "#endif$nl"
+$activePlasma = (0..3 | ForEach-Object { "sloPlasmaStart$_.w > 0.0" }) -join ' || '
+$plasmaWorldPixel = if ($Complementary) { 'z0 > 0.56' } elseif ($Mellow) { 'true' } else { '!front_is_hand' }
+if (!$Complementary -and !$Mellow) { $aperture += "#ifdef SLO_PLASMA_COLUMN$nl" }
+$aperture += "    if ($plasmaWorldPixel && ($activePlasma)) {$nl"
+$plasmaRayExpr = if (!$Complementary -and !$Mellow) { 'direction_world' } else { 'normalize(front_position_world - cameraPosition)' }
+$aperture += "        vec3 plasmaRay = $plasmaRayExpr;$nl"
+$surfaceDistance = if ($Mellow) { 'slo_scene_distance(texcoord, false)' } elseif ($Complementary) { 'slo_scene_distance(texCoord, true)' } else { 'view_distance' }
+$aperture += "        vec3 plasmaSurface = plasmaRay * $surfaceDistance;$nl"
+$aperture += "        vec3 plasmaRadiance = vec3(0.0); float plasmaTransmission = 1.0;$nl"
+for ($i = 0; $i -lt 4; $i++) {
+    $aperture += "        if (sloPlasmaStart$i.w > 0.0) { vec4 plasma = slo_plasma_light(plasmaRay, plasmaSurface, sloPlasmaStart$i, sloPlasmaAxis$i, sloPlasmaFlow$i, sloBeamVolume); plasma *= (1.0 - sloPlasmaExtinction[$i]); plasmaRadiance += plasma.rgb; plasmaTransmission *= 1.0 - plasma.a; }$nl"
+    if (!$Complementary -and !$Mellow) { $aperture += "        if (sloPlasmaStart$i.w > 0.0) plasmaRadiance += (1.0 - sloPlasmaExtinction[$i]) * slo_plasma_lens(sloPlasmaStart$i, sloPlasmaAxis$i, gl_FragCoord.xy / view_res, view_res.x / view_res.y, -front_position_view.z);$nl" }
+}
+$aperture += "        if (plasmaRadiance.r > 0.0) fragment_color.rgb = fragment_color.rgb * mix(1.0, plasmaTransmission, sloPlasmaVolumeMix) + plasmaRadiance;$nl"
+$aperture += "    }$nl"
+if (!$Complementary -and !$Mellow) { $aperture += "#endif$nl" }
+
 $volume = $nl + "    // SLO VOLUME INTEGRATION" + $nl + "    {" + $nl
 $volume += "    vec3 slo_vray = normalize(front_position_world - cameraPosition);" + $nl
 $volume += "    float slo_vscene = length(front_position_world - cameraPosition);" + $nl
@@ -264,12 +292,14 @@ if ($Complementary) {
     $flareSource = $flareSource.Replace('return slo_point_glow(source,tint,vec4(1.0),uv,resolution);',
         'return slo_point_glow(source,tint,vec4(1.0),uv,resolution,vec2(SLO_COMPLEMENTARY_SIGNAL_CORE, SLO_COMPLEMENTARY_SIGNAL_HALO));')
     $flareDecl = '#include "/lib/slo/depth.glsl"' + $nl + '#include "/lib/slo/glow_visibility.glsl"' + $nl
-    $flareBody = "    vec2 sloResolution = vec2(viewWidth, viewHeight);${nl}"
-    for ($i = 0; $i -lt 16; $i++) {
+    $flareDecl += "uniform int sloFlareCount;" + $nl
+    $flareBody = "    vec2 sloResolution = vec2(viewWidth, viewHeight);${nl}    vec3 sloMissileCores = vec3(0.0), sloMissileHalos = vec3(0.0);${nl}"
+    for ($i = 0; $i -lt 128; $i++) {
         $flareDecl += "uniform vec4 sloFlareA$i; uniform vec4 sloFlareC$i;${nl}"
-        $flareBody += "    color += slo_flare_glow(sloFlareA$i, sloFlareC$i, texCoord, sloResolution);${nl}"
-        $aperture = $aperture.Replace("        fragment_color.rgb += slo_flare_glow(sloFlareA$i, sloFlareC$i, slo_auv, slo_ares) * slo_beamGlow;" + $nl, '')
+        $flareBody += "    if (sloFlareCount > $i) { if ($i >= sloFlareCount-sloMissileGlowCount) slo_missile_glow(sloFlareA$i,sloFlareC$i,texCoord,sloResolution,sloMissileCores,sloMissileHalos); else color += slo_flare_glow(sloFlareA$i, sloFlareC$i, texCoord, sloResolution); }${nl}"
+        $aperture = $aperture.Replace("        if (sloFlareCount > $i) { if ($i >= sloFlareCount-sloMissileGlowCount) slo_missile_glow(sloFlareA$i,sloFlareC$i,slo_auv,slo_ares,sloMissileCores,sloMissileHalos); else fragment_color.rgb += slo_flare_glow(sloFlareA$i, sloFlareC$i, slo_auv, slo_ares) * slo_beamGlow; }" + $nl, '')
     }
+    $flareBody += "    color += sloMissileCores+slo_missile_halo_resolve(sloMissileHalos);${nl}"
     $flareAnchor = '    #ifdef COLORGRADING'
     $flareMain = 'void main() {'
     if ($flareText.IndexOf($flareMain) -lt 0 -or $flareText.IndexOf($flareAnchor) -lt 0 -or

@@ -60,6 +60,13 @@ public final class ServerFlashes {
     }
     public static void emitSized(Level level,Vec3 pos,Vec3 axis,int kind,int emitterId,Vec3 lightCenter,float charge,float plumeSize,
                                  float[] profile,long mountPos,boolean emitAutocannonHaze,boolean halfSizeFireball) {
+        emitSized(level,pos,axis,kind,emitterId,lightCenter,charge,plumeSize,profile,mountPos,emitAutocannonHaze,
+            halfSizeFireball,false);
+    }
+
+    public static void emitSized(Level level,Vec3 pos,Vec3 axis,int kind,int emitterId,Vec3 lightCenter,float charge,float plumeSize,
+                                 float[] profile,long mountPos,boolean emitAutocannonHaze,boolean halfSizeFireball,
+                                 boolean groupedMuzzle) {
         if (!(level instanceof ServerLevel server)) return;
         if (!FlashStore.valid(pos.x, pos.y, pos.z, axis.x, axis.y, axis.z, kind)) return;
         // Thin autocannon haze has its own gate and material. MediumCannonEffects sends its own dust event.
@@ -67,7 +74,11 @@ public final class ServerFlashes {
                 && dev.sablelightoverhaul.lighting.LightingCommon.AUTO_HAZE_ENABLED.get())
             CannonDustEvents.emitAutocannon(server,pos,axis,emitterId);
         boolean hasMount = mountPos != Long.MIN_VALUE;
-        long mountSlot = !hasMount && halfSizeFireball ? FlashPayload.HALF_SIZE_FIREBALL : mountPos;
+        long mountSlot = mountPos;
+        if (!hasMount) {
+            if (groupedMuzzle) mountSlot = FlashPayload.GROUPED_MUZZLE;
+            else if (halfSizeFireball) mountSlot = FlashPayload.HALF_SIZE_FIREBALL;
+        }
         FlashPayload payload = new FlashPayload(server.dimension().location(), pos.x, pos.y, pos.z,
             (float)axis.x, (float)axis.y, (float)axis.z, kind, emitterId, lightCenter.x, lightCenter.y, lightCenter.z,
             charge, plumeSize, profile, hasMount, mountSlot);

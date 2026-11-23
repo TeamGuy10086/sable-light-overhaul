@@ -151,17 +151,32 @@ public final class MuzzleSmokeMesh {
 
     public static void drawThermalCluster(VertexConsumer out,Camera camera,double x,double y,double z,double xo,double yo,double zo,
             float partial,float sizeX,float sizeY,float roll,int encoded,float alpha,float steady,float breakup,float densityDetail,int light){
+        drawThermalCluster(out,camera,x,y,z,xo,yo,zo,partial,sizeX,sizeY,roll,encoded,alpha,steady,breakup,densityDetail,light,false);
+    }
+
+    static void drawThermalCluster(VertexConsumer out,Camera camera,double x,double y,double z,double xo,double yo,double zo,
+            float partial,float sizeX,float sizeY,float roll,int encoded,float alpha,float steady,float breakup,float densityDetail,int light,
+            boolean groundFireball){
         float u=-encoded*4.0f;
+        float v=groundFireball ? 2.0f : 0.0f;
         quadShaped(out,camera,x,y,z,xo,yo,zo,partial,sizeX*.8f,sizeY*.8f,roll,
-            u-.8f,u+.8f,.8f,-.8f,steady,breakup,1-densityDetail/3,alpha,light,0,0);
+            u-.8f,u+.8f,v+.8f,v-.8f,steady,breakup,1-densityDetail/3,alpha,light,0,0);
     }
 
     /** Reserved -64..-127 seeds select a cold cached cluster; cannot collide with thermal >=128. */
     public static void drawCachedPuff(VertexConsumer out,Camera camera,double x,double y,double z,double xo,double yo,double zo,
             float partial,float sizeX,float sizeY,float roll,int seed,float red,float green,float blue,float alpha,int light){
-        float u=-(64+(seed&63))*4.0f;
+        drawCachedPuff(out,camera,x,y,z,xo,yo,zo,partial,sizeX,sizeY,roll,seed,false,red,green,blue,alpha,light,false,false);
+    }
+
+    static void drawCachedPuff(VertexConsumer out, Camera camera,double x,double y,double z,double xo,double yo,double zo,
+            float partial,float sizeX,float sizeY,float roll,int seed,boolean dense,float red,float green,float blue,float alpha,int light,
+            boolean impactSmoke,boolean thickCore){
+        float u = (dense ? 64 + (seed & 63) : -(64 + (seed & 63))) * 4.0f;
+        // Separate UV bands distinguish thick ground smoke and the softer buried smoke foot.
+        float v = thickCore ? 2.0f : impactSmoke && !dense ? 4.0f : 0.0f;
         quadShaped(out,camera,x,y,z,xo,yo,zo,partial,sizeX*.8f,sizeY*.8f,roll,
-            u-.8f,u+.8f,.8f,-.8f,red,green,blue,alpha,light,0,0);
+            u-.8f,u+.8f,v+.8f,v-.8f,red,green,blue,alpha,light,0,0);
     }
 
     private static float uv0(int seed) {

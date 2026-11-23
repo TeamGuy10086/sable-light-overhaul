@@ -56,6 +56,37 @@ public final class EffectApi {
     /** Consumers should refuse to work with a version they do not know. */
     public static final int VERSION = 1;
 
+    /**
+     * Draws the air-interception effect after a confirmed detonation. Call once on the
+     * server thread with a world-space center and the incoming motion in blocks per tick.
+     * The caller owns the explosion and its gameplay effects.
+     */
+    public static void renderInterception(net.minecraft.server.level.ServerLevel level, Vec3 center,
+                                          Vec3 incomingMotion, float power) {
+        var unknown = dev.sablelightoverhaul.InterceptionPayload.UNKNOWN;
+        renderInterception(level, center, incomingMotion, unknown, unknown, power);
+    }
+
+    /**
+     * Plays one interception effect after a confirmed removal. Positions are world-space, motion is
+     * blocks per tick, and power is CBC blockDamagePower. Zero displays a mechanical breakup.
+     * The caller retains full authority for gameplay.
+     */
+    public static void renderInterception(net.minecraft.server.level.ServerLevel level, Vec3 center,
+                                          Vec3 incomingMotion, ResourceLocation missileType,
+                                          ResourceLocation warheadKind, float power) {
+        renderInterception(level, center, incomingMotion, missileType, warheadKind, power, 0);
+    }
+
+    /** Largest nominal fragment diameter in blocks. Zero uses the missile-type default. */
+    public static void renderInterception(net.minecraft.server.level.ServerLevel level, Vec3 center,
+                                          Vec3 incomingMotion, ResourceLocation missileType,
+                                          ResourceLocation warheadKind, float power, float fragmentDiameter) {
+        dev.sablelightoverhaul.InterceptionPayload.broadcast(level, center, incomingMotion,
+            missileType, warheadKind, power, fragmentDiameter);
+    }
+
+
     // ------------------------------------------------------------------------------------------------
     // Registration. The ones that are not wired yet throw on purpose: a silently ignored registration
     // would be the worst possible outcome, because an author would see no effect and no error.

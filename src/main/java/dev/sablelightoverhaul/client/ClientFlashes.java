@@ -40,7 +40,7 @@ public final class ClientFlashes {
         var next = requested.resolve(GpuLightRenderer.ready(), pack, pack && IrisCompat.sloPackInUse());
         boolean changed=effective!=next;
         if(changed) {
-            AdvancedLights.clear(); GpuLightRenderer.clear(); STORE.clear(); SmokeTracker.clear(); GroundDustParticle.clearHaze(); visualEpoch++;
+            AdvancedLights.clear(); GpuLightRenderer.clear(); STORE.clear(); SmokeTracker.clear(); GroundDustParticle.clearHaze(); ExplosionTrailMesh.clear(); visualEpoch++;
             effective=next;
         }
         if(changed || requested!=lastRequested) {
@@ -89,7 +89,7 @@ public final class ClientFlashes {
         // Old world's light storage is discarded with that world; never touch a new world with old positions.
         AdvancedLights.clear(); GpuLightRenderer.clear(); effective=dev.sablelightoverhaul.LightingMode.Off; lastRequested=null; visualEpoch++;
         takenOver = Set.of(); lastTaken = List.of(); PENDING_REMOVAL.clear();
-        lastTakeOverLog = Long.MIN_VALUE; STORE.clear(); SmokeTracker.clear(); owner = level;
+        lastTakeOverLog = Long.MIN_VALUE; STORE.clear(); SmokeTracker.clear(); ExplosionTrailMesh.clear(); owner = level;
     }
     public static boolean prepareEffects(ClientLevel level) {
         if (owner != level) reset(level);
@@ -110,11 +110,12 @@ public final class ClientFlashes {
         String cannon = payload.hasMount()
                 ? ProfileCache.cannonAt(payload.dimension(), payload.mountPos()).orElse(null)
                 : null;
+        boolean largeFlash = payload.kind() == 0 || payload.kind() == FlashPayload.EXPLOSION_LIGHT;
         var pulse=payload.kind()==2 ? MuzzleClientConfig.TANK_PROFILE.curve(payload.hasProfile()?payload.profile():null)
-            : payload.kind()==0 ? MuzzleClientConfig.bigLight(cannon) : MuzzleClientConfig.autoLight(cannon);
-        var layout=payload.kind()==0 ? MuzzleClientConfig.bigLayout()
+            : largeFlash ? MuzzleClientConfig.bigLight(cannon) : MuzzleClientConfig.autoLight(cannon);
+        var layout=largeFlash ? MuzzleClientConfig.bigLayout()
             : dev.sablelightoverhaul.LightLayout.AUTO;
-        if(payload.kind()==0) {
+        if(largeFlash) {
             var stages=dev.sablelightoverhaul.MuzzleLightTiming.big(pulse,layout,
                 MuzzleClientConfig.BLAST_PROFILE.curve(payload.hasProfile()?payload.profile():null),
                 MuzzleClientConfig.SMOKE_PROFILE.curve(payload.hasProfile()?payload.profile():null));
@@ -123,7 +124,8 @@ public final class ClientFlashes {
         if (!STORE.add(payload.x(), payload.y(), payload.z(), payload.dx(), payload.dy(), payload.dz(),
                 payload.kind(), level.getGameTime(), pulse,
                 layout,
-                new FlashStore.Emitter(payload.emitterId(),payload.lightX(),payload.lightY(),payload.lightZ(),payload.charge(),payload.plumeSize(),payload.hasProfile()?payload.profile():null))) return;
+                new FlashStore.Emitter(payload.emitterId(),payload.lightX(),payload.lightY(),payload.lightZ(),payload.charge(),payload.plumeSize(),
+                    payload.hasProfile()?payload.profile():null),payload.groupedMuzzle())) return;
         if(payload.kind()==0) FireballParticle.bigMuzzle(level,payload.x(),payload.y(),payload.z(),payload.dx(),payload.dy(),payload.dz(),
             payload.charge(),MuzzleClientConfig.BLAST_PROFILE.curve(payload.hasProfile()?payload.profile():null).durationTicks(),
             payload.fireballSizeScale());

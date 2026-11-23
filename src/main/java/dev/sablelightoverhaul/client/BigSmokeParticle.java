@@ -78,13 +78,13 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  }
  private static boolean dead(Live e){var p=e.particle.get();return p==null||p.removed;}
  private BigSmokeParticle(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int index,int birthTick,Appearance appearance){
-  this(level,origin,direction,group,index,birthTick,appearance,false);
+  this(level,origin,direction,group,index,birthTick,appearance,0L);
  }
 
  private BigSmokeParticle(ClientLevel level,Vec3 origin,Vec3 direction,SmokeTracker.Group group,int index,int birthTick,
-                          Appearance appearance,boolean fixedSeed){
+                          Appearance appearance,long fixedSeed){
   super(level,origin.x,origin.y,origin.z);
-  if(fixedSeed)random.setSeed(0x534c4fL+index*31L);
+  if(fixedSeed!=0)random.setSeed(fixedSeed);
   this.origin=origin;axis=direction.normalize();this.birthTick=birthTick;
   double fraction=BigSmokeModel.station(index);
   cold=dev.sablelightoverhaul.BigSmokeBirthModel.isCold(index,appearance.coldFraction());
@@ -142,7 +142,7 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
    int start=firstPuff(batch,total,release);
    int end=start+BigSmokeModel.children(total,release,batch);
    for(int index=start;index<end;index++){
-    var puff=new BigSmokeParticle(level,origin,direction,null,index,batch,appearance,true);
+    var puff=new BigSmokeParticle(level,origin,direction,null,index,batch,appearance,0x534c4fL+index*31L);
     puff.benchmarkIndex=index;
     puff.age=Math.clamp(shotTick-batch,0,puff.lifetime-1);
     puff.positionAt((puff.age+batch)/20.0);
@@ -161,6 +161,16 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
   result.add(puff);
   Minecraft.getInstance().particleEngine.add(puff);
  }
+ /** Deterministic moving battery fixture, no world entities, explosions or live-budget eviction. */
+ static BigSmokeParticle batteryPuff(ClientLevel level,Vec3 origin,Vec3 direction,int index,int batch,long fixedSeed){
+  return new BigSmokeParticle(level,origin,direction,null,index,batch,cannonAppearance(8,false),fixedSeed);
+ }
+ void batteryAge(float ticks){
+  age=(int)ticks;
+  positionAt((ticks+birthTick)/20.0);xo=x;yo=y;zo=z;
+  quadSize=getQuadSize(0);alpha=coverage(0);
+ }
+ int batteryLife(){return lifetime;}
  private int benchmarkIndex=-1;
  private float benchmarkSize;
  private double windX,windZ;
@@ -208,6 +218,7 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
  @Override public float getQuadSize(float partial){return benchmarkSize>0?benchmarkSize:(float)(radius*dev.sablelightoverhaul.BigSmokeBirthModel.growth((age+birthTick+partial)/20.0,expansion,cold,coldSize));}
  @Override public ParticleRenderType getRenderType(){return MuzzleParticleLayer.TYPE;}
  @Override public void render(com.mojang.blaze3d.vertex.VertexConsumer out,net.minecraft.client.Camera camera,float partial){
+  if(SmokeResolution.capture(this))return;
   if(benchmarkIndex>=0){
    if(!SmokeBenchmark.drawPuff(benchmarkIndex))return;
    partial=0;
@@ -229,6 +240,7 @@ public final class BigSmokeParticle extends TextureSheetParticle implements Trac
     .28f+.55f*heat,.29f+.32f*heat,.31f+.10f*heat,a,MuzzleParticleLayer.markLight(super.getLightColor(partial),false));
   }
  }
+ boolean hasVisibleCoverage(float partial){return coverage(partial)>=.002;}
  static boolean singleQuad(){return BigSmokeConfig.FLIPBOOK.get()||(BigSmokeConfig.SINGLE_PASS.get()&&ClientFlashes.inPackLighting());}
  public double slo$x(){return x;}public double slo$y(){return y;}public double slo$z(){return z;}
  public double slo$px(){return xo;}public double slo$py(){return yo;}public double slo$pz(){return zo;}

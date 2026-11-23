@@ -9,7 +9,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class BigSmokeConfig {
  public static ModConfigSpec.BooleanValue ENABLED,SINGLE_PASS,FLIPBOOK,SIMPLE_LIGHTING,PERFORMANCE,SOFT_EDGE_CULL;
  public static ModConfigSpec.DoubleValue SCALE, LENGTH, DIAMETER, OPACITY, RISE, SPREAD, EXPANSION, FADE_FROM, FLASH_LINK, CHARGE_REFERENCE, CHARGE_EXPONENT, CHARGE_MAX, AMBIENT_GAIN, EMISSION_GAIN, ROOT_HOT_SCALE, TIP_HOT_SCALE, COLD_FRACTION, COLD_SIZE, CURL, DENSITY_DETAIL,SOFT_EDGE_THRESHOLD;
- public static ModConfigSpec.IntValue LIFE, HOT_TICKS, RELEASE_TICKS, COUNT, LIMIT;
+ public static ModConfigSpec.IntValue RESOLUTION_BIAS, PHOTON_RESOLUTION_BIAS, LIFE, HOT_TICKS, RELEASE_TICKS, COUNT, LIMIT;
 
  public static void define(ModConfigSpec.Builder b) {
   b.push("particles.muzzle.bigCannon.thermalSmoke");
@@ -47,6 +47,10 @@ public final class BigSmokeConfig {
   CHARGE_MAX=b.comment("装药尺寸倍率上限（0.1~16），默认6；替代旧固定1.8上限。极大尺寸仍可能有明显透明绘制开销。").defineInRange("chargeMaxScale",6.0,.1,16.0);
   FLIPBOOK=b.comment("六组预烘焙烟雾动画，默认开启；每瓣随机选一组并插值播放。关闭恢复程序化噪声供A/B；不改变运动、数量和透明层。开启时统一单面绘制，singlePass仅控制旧程序化路径。").define("flipbook",true);
   PERFORMANCE=b.comment("使用预烘焙遮罩计算边缘侵蚀和冷烟透明度纹理。开启后，新发射的 CBC 大炮热烟数量减半并向上取整，轴向喷射距离缩至原来的三分之二。").define("performanceMode",false);
+  RESOLUTION_BIAS=b.comment("大炮热烟画质与性能平衡。0固定原分辨率，20为默认，按累计烟片屏占比自动切换，100固定宽高各四分之一。仅无光影或SLO Only生效。")
+      .defineInRange("resolutionPerformance",20,0,100);
+  PHOTON_RESOLUTION_BIAS=b.comment("Photon Advanced 大炮热烟画质与性能平衡。默认50，宽高至少减半，重叠多时用四分之一。左侧允许原分辨率，右侧逐步允许八分之一和十六分之一。0固定原分辨率，100固定宽高各十六分之一。")
+      .defineInRange("photonResolutionPerformance",50,0,100);
   SOFT_EDGE_CULL=b.comment("默认开启。几乎透明的热烟材质片元在后续受光与混合前退出，弱边缘平滑渐退。关闭可恢复原始透明度曲线。").define("softEdgeCull",true);
   SOFT_EDGE_THRESHOLD=b.comment("弱透明烟边早退的 Alpha 丢弃阈值，范围 0.002~0.100，默认 0.016（1.6%）。弱边缘渐退带宽为 0.034。可实时调整，仅在早退开启时生效。").defineInRange("softEdgeThreshold",0.016,0.002,0.100);
   SIMPLE_LIGHTING=b.comment("大炮热烟使用环境底色和燃烧自发光，默认开启；跳过逐灯受光和太阳阴影。跟烟光源仍照亮周围，冷却/消散不变。关闭恢复完整受光供A/B，仅Advanced路径生效。").define("simpleLighting",true);

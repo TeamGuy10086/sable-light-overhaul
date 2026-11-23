@@ -144,6 +144,16 @@ class BigSmokeModelTest {
         assertTrue(BigSmokeModel.chargeScale(1e9,4,.5,6)<=16.0,"default maximum 6 keeps the authored cap");
     }
 
+    @Test void impactSmokeMovesThroughTheSharedHotAndColdAtlasFrames() {
+        assertEquals(0, BigSmokeModel.impactMaterialAge(0, 40, 0));
+        assertTrue(BigSmokeModel.impactMaterialAge(20, 40, 0) < .5);
+        assertTrue(BigSmokeModel.impactMaterialAge(39, 40, 0) < 1);
+        assertEquals(1, BigSmokeModel.impactMaterialAge(40, 40, 0));
+        assertEquals(1, BigSmokeModel.impactMaterialAge(0, 0, 0));
+        assertEquals(4.5, BigSmokeModel.impactMaterialAge(72, 40, .5));
+        assertEquals(8, BigSmokeModel.impactMaterialAge(104, 40, 1));
+    }
+
     @Test void encodedSeedKeepsSixBitIdAndQuantizedThermalFrame() {
         for (int seed = -200; seed <= 200; seed++) assertEquals(seed & 63, (BigSmokeModel.encodedSeed(seed, 0) - 128) & 63);
         assertEquals(128 + 63, BigSmokeModel.encodedSeed(63, 0), "id 63 stays in the field, not the frame");

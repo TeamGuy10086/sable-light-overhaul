@@ -95,6 +95,7 @@ public final class SableLightOverhaul {
     public static Consumer<FlashlightPeersPayload> flashlightPeersReceiver = payload -> {};
     /** Where the tracer shells are, so the client can draw their trails itself. */
     public static Consumer<AutocannonTrackPayload> autocannonTrackReceiver = payload -> {};
+    public static Consumer<AutocannonTrackPayload.Phased> phasedAutocannonTrackReceiver = payload -> {};
     public static Consumer<AutocannonFlightPayload> autocannonFlightReceiver = payload -> {};
     public static Consumer<ShellTrackPayload> shellTrackReceiver = payload -> {};
     public static Consumer<HostileShellPayload> hostileShellReceiver = payload -> {};
@@ -117,7 +118,28 @@ public final class SableLightOverhaul {
         bus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) ->
             event.enqueueWork(HealthbarServerBridge::installAutocannonFeed));
     }
+    public static Consumer<BlastPreviewPayload> blastPreviewReceiver = payload -> {};
+    public static Consumer<BlastPreviewPayload.Approach> blastApproachReceiver = payload -> {};
+    public static Consumer<InterceptionPayload> interceptionReceiver = payload -> {};
+    public static Consumer<InterceptionPayload.Sized> sizedInterceptionReceiver = payload -> {};
+
     private static void register(RegisterPayloadHandlersEvent event) {
+        var blastPreview = event.registrar("1").optional();
+        blastPreview.playToClient(InterceptionPayload.TYPE, InterceptionPayload.CODEC,
+            (payload, context) -> context.enqueueWork(() -> interceptionReceiver.accept(payload)));
+        blastPreview.playToClient(InterceptionPayload.Sized.TYPE, InterceptionPayload.Sized.CODEC,
+            (payload, context) -> context.enqueueWork(() -> sizedInterceptionReceiver.accept(payload)));
+        blastPreview.playToClient(BlastPreviewPayload.Impact.TYPE, BlastPreviewPayload.Impact.CODEC,
+            (payload, context) -> context.enqueueWork(() -> blastPreviewReceiver.accept(payload.visual())));
+        blastPreview.playToClient(BlastPreviewPayload.TYPE, BlastPreviewPayload.CODEC,
+            (payload, context) -> context.enqueueWork(() -> blastPreviewReceiver.accept(payload)));
+        blastPreview.playToClient(BlastPreviewPayload.Approach.TYPE, BlastPreviewPayload.Approach.CODEC,
+            (payload, context) -> context.enqueueWork(() -> blastApproachReceiver.accept(payload)));
+        blastPreview.playToServer(BlastPreviewPayload.Adjust.TYPE, BlastPreviewPayload.Adjust.CODEC,
+            (payload, context) -> context.enqueueWork(() -> {
+                if (context.player() instanceof net.minecraft.server.level.ServerPlayer player)
+                    BlastDebugItem.adjust(player, payload);
+            }));
         // 32 adds the independent tank residual-smoke emitter event.
         // Protocol 46 adds carrier UUIDs for optional per-shot mathematical-flight deduplication.
         // Protocol 45 adds the bounded remote-autocannon position channel.
@@ -167,8 +189,14 @@ public final class SableLightOverhaul {
         // The trail's path, not the trail itself: the client draws the ribbon from these positions.
         event.registrar("47").playToClient(AutocannonTrackPayload.TYPE,AutocannonTrackPayload.CODEC,
             (payload,context)->context.enqueueWork(()->autocannonTrackReceiver.accept(payload)));
+        event.registrar("1").optional().playToClient(AutocannonTrackPayload.Phased.TYPE,AutocannonTrackPayload.Phased.CODEC,
+            (payload,context)->context.enqueueWork(()->phasedAutocannonTrackReceiver.accept(payload)));
         event.registrar("1").optional().playToClient(AutocannonFlightPayload.TYPE,AutocannonFlightPayload.CODEC,
             (payload,context)->context.enqueueWork(()->autocannonFlightReceiver.accept(payload)));
+        event.registrar("1").optional().playToClient(AutocannonFlightPayload.Phased.TYPE,AutocannonFlightPayload.Phased.CODEC,
+            (payload,context)->context.enqueueWork(()->autocannonFlightReceiver.accept(payload.data())));
+        event.registrar("1").optional().playToClient(AutocannonFlightPayload.Sampled.TYPE,AutocannonFlightPayload.Sampled.CODEC,
+            (payload,context)->context.enqueueWork(()->autocannonFlightReceiver.accept(payload.data())));
         event.registrar("1").optional().playToClient(HostileShellPayload.TYPE,HostileShellPayload.CODEC,
             (payload,ctx)->ctx.enqueueWork(()->hostileShellReceiver.accept(payload)));
         event.registrar("1").optional().playToClient(HostileMathFlightPayload.TYPE,HostileMathFlightPayload.CODEC,

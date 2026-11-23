@@ -41,6 +41,9 @@ public final class BigSmokeModel {
  }
  public static double heat(double age,double hotTicks){return Math.max(0,1-age/Math.max(1,hotTicks));}
  public static int encodedSeed(int seed,double thermalAge){return 128+(seed&63)+64*(int)Math.clamp(Math.floor(thermalAge*32),0,255);}
+ public static double impactMaterialAge(double elapsed, int luminousTicks, double coldLife) {
+  return elapsed < luminousTicks ? Math.pow(elapsed / luminousTicks, 1.32) : 1 + coldLife * 7;
+ }
  public static int children(int total,int releaseTicks,int tick){
   if(total<=0||releaseTicks<=0||tick<0||tick>=releaseTicks)return 0;
   return (int)(((long)(tick+1)*total+releaseTicks-1)/releaseTicks)-(int)(((long)tick*total+releaseTicks-1)/releaseTicks);

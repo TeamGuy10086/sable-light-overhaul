@@ -1,6 +1,5 @@
 package dev.sablelightoverhaul.mixin;
 
-import dev.sablelightoverhaul.lighting.SpotlightBlock;
 import dev.sablelightoverhaul.lighting.SpotlightBlockEntity;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -19,7 +18,7 @@ abstract class WorldEditWorldMixin {
     private CompoundTag slo$copyDefaultSpotlightAim(BlockEntity entity, HolderLookup.Provider registries) {
         CompoundTag tag = entity.saveWithId(registries);
         if (entity instanceof SpotlightBlockEntity lamp) {
-            tag.putInt("slo_we_range", lamp.getBlockState().getValue(SpotlightBlock.RANGE));
+            // Range is now included by the block entity itself.
             tag.putDouble("angle", 0.0);
             tag.putDouble("azimuth", 0.0);
             tag.putDouble("sweepBase", 0.0);
